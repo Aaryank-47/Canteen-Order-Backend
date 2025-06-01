@@ -8,12 +8,22 @@ import foodRoutes from "./routers/foodsRouter.js";
 import profileRoutes from "./routers/profileRouters.js";
 import orderRoutes from "./routers/orderRouter.js";
 import collegeRouters from "./routers/collegeRouters.js"
+import cors from "cors";
+
+//CORS
+const corsOptions = {
+    origin: 'http://localhost:5173',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    credentials: true,
+    optionsSuccessStatus: 204 
+};
 
 dotenv.config();
 const app = express();
 
 
 //MIDDLEWARES
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
 app.use(cookieParser());
