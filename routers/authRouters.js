@@ -14,7 +14,7 @@ router.route("/login").post(login);
 router.route("/logout").post(logout);
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword").post(authMiddleware,resetPassword);
-router.route("/protected").get(authMiddleware,(req,res)=>{
+router.route("/verify-token").get(authMiddleware,(req,res)=>{
     res.send("Protected route");
 });
 router.route("/check-user-admin-auth").get(authOrAdminAuthMiddleware, (req, res) => {
