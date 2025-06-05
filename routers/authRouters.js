@@ -1,5 +1,5 @@
 import express from "express";
-import {signup,login,logout,forgotPassword,resetPassword} from "../Controllers/authControls.js"
+import {signup,login,logout,forgotPassword,resetPassword, googleLogin} from "../Controllers/authControls.js"
 import { authMiddleware } from "../middleware/authMiddleware.js";
 import { authOrAdminAuthMiddleware } from "../middleware/authoradminauthMidlleware.js";
 
@@ -12,6 +12,7 @@ router.route("/").get((req,res)=>{
 router.route("/signup").post(signup);
 router.route("/login").post(login);
 router.route("/logout").post(logout);
+router.route("/google-login").post(googleLogin)
 router.route("/forgotPassword").post(forgotPassword);
 router.route("/resetPassword").post(authMiddleware,resetPassword);
 router.route("/verify-token").get(authMiddleware,(req,res)=>{

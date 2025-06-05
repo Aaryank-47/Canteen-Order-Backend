@@ -1,6 +1,6 @@
 import user from "../models/authModels.js"
 import bcrypt from "bcryptjs";
-import {generateToken} from "../utils/jwt.js";
+import { generateToken } from "../utils/jwt.js";
 import { sendOtpMail } from "../utils/mailer.js"
 import generateotp from "../utils/otpGenerator.js";
 import { OAuth2Client } from "google-auth-library"
@@ -30,10 +30,10 @@ export const signup = async (req, res) => {
                 email,
                 password: hashPassword
             });
-            
-            if (!profileCreated) {
-                return res.status(400).json({ message: "Profile not created" });
-            }   
+
+            // if (!profileCreated) {
+            //     return res.status(400).json({ message: "Profile not created" });
+            // }   
 
             const token = await generateToken(userCreated);
 
@@ -64,32 +64,36 @@ export const signup = async (req, res) => {
 export const login = async (req, res) => {
 
     try {
-        const { email, password } = req.body;
+        const { email, contact, password } = req.body;
 
-        if (!email || !password) {
-            return res.status(400).json({ message: "please fill all the required fields" });
+        if ((!email && !contact) || !password) {
+            return res.status(400).json({ message: "Please provide email/phone and password" });
         }
 
-        const userExists = await user.findOne({ email });
+        // Find user by email or phone
+        const userExists = email
+            ? await user.findOne({ email })
+            : await user.findOne({ contact });
+
         if (!userExists) {
-            return res.status(400).json({ message: "User does not exist" });
+            return res.status(400).json({ message: "User not found" });
         }
 
-        const userPasswordMatch = await bcrypt.compare(password, userExists.password);
-        if (!userPasswordMatch) {
-            return res.status(401).json({ message: "wrong password buddy" });
+        const passwordMatch = await bcrypt.compare(password, userExists.password);
+        if (!passwordMatch) {
+            return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const token = await generateToken(userExists)
+        const token = generateToken(userExists);
         res.cookie("token", token, {
             httpOnly: true,
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
             secure: false,
             sameSite: "none"
-        }).status(200).json({ 
-            message: "login successfully", 
-            userId: userExists._id.toString(), 
-            token: token 
+        }).status(200).json({
+            message: "login successfully",
+            userId: userExists._id.toString(),
+            token: token
         });
         console.log(token)
         //show cookie in console
@@ -226,8 +230,13 @@ export const googleLogin = async (req, res) => {
             secure: false,
             sameSite: "none"
         }).status(200).json({
-            message: "login successfully",
+            message: "Google login successfully",
             userId: user._id.toString(),
+            user :{
+                name: user.name,
+                email: user.email,
+                contact: user.contact
+            },
             token: token
         }).json({ message: "login successfully", userId: user._id.toString(), token: token });
         console.log(token)
