@@ -206,14 +206,14 @@ export const googleLogin = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID
         });
 
-        const payload = ticket.getplayload();
+        const payload = ticket.getPayload();
         const { name, contact, email, college } = payload;
-        const user = await user.findOne({ email });
-        if (!user) {
+        const userFind = await user.findOne({ email });
+        if (!userFind) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            user = await user.create({
+            const CreateUser = await user.create({
                 name,
                 college,
                 contact,
@@ -221,25 +221,31 @@ export const googleLogin = async (req, res) => {
                 password: hashedPassword
             });
 
+            if(!CreateUser){
+                res.status(404).json({
+                    message: "user can not been created by userId "
+                })
+            }
+            const token = await generateToken(CreateUser);
+            res.cookie("token", token, {
+                httpOnly: true,
+                expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+                secure: false,
+                sameSite: "none"
+            }).status(200).json({
+                message: "Google login successfully",
+                userId: user._id.toString(),
+                CreateUser :{
+                    name: CreateUser.name,
+                    email: CreateUser.email,
+                    contact: CreateUser.contact
+                },
+                token: token
+            }).json({ message: "Google login successfully", userId: user._id.toString(), token: token });
+            console.log(token)
         }
+        
 
-        const token = await generateToken(user);
-        res.cookie("token", token, {
-            httpOnly: true,
-            expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            secure: false,
-            sameSite: "none"
-        }).status(200).json({
-            message: "Google login successfully",
-            userId: user._id.toString(),
-            user :{
-                name: user.name,
-                email: user.email,
-                contact: user.contact
-            },
-            token: token
-        }).json({ message: "login successfully", userId: user._id.toString(), token: token });
-        console.log(token)
 
     } catch (error) {
         console.error("Google Login Error:", error);

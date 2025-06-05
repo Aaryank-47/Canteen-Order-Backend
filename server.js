@@ -9,6 +9,8 @@ import profileRoutes from "./routers/profileRouters.js";
 import orderRoutes from "./routers/orderRouter.js";
 import collegeRouters from "./routers/collegeRouters.js"
 import cors from "cors";
+dotenv.config();
+const app = express();
 
 //CORS
 const corsOptions = {
@@ -18,15 +20,22 @@ const corsOptions = {
     optionsSuccessStatus: 204 
 };
 
-dotenv.config();
-const app = express();
-
-
 //MIDDLEWARES
-app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
+app.use(cors(corsOptions));
 app.use(cookieParser());
+
+
+// COOP Header Middleware
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
+
+
+
+
 
 //ROUTERS
 app.use("/api/v1/users",authRoutes);
@@ -39,11 +48,20 @@ app.use("/api/v1/college",collegeRouters);
 
 //PORT 
 const port = process.env.PORT || 3000;
-app.listen(port ,(req,res)=>{
-    console.log(`Serrver successfully Connected http://localhost:${port}`)
-    try {
-        connectDB();
-    } catch (error) {
-        console.log("Database connection get failed",error)
-    }
-});
+connectDB()
+  .then(() => {
+    app.listen(port, () => {
+      console.log(`Server successfully connected at http://localhost:${port}`);
+    });
+  })
+  .catch((error) => {
+    console.error("❌ Failed to connect to the database:", error);
+  });
+// app.listen(port ,(req,res)=>{
+//     console.log(`Serrver successfully Connected http://localhost:${port}`)
+//     try {
+//         connectDB();
+//     } catch (error) {
+//         console.log("Database connection get failed",error)
+//     }
+// });
