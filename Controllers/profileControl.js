@@ -5,8 +5,10 @@ import {generateToken} from "../utils/jwt.js";
 export const getProfile = async (req, res) => {
 
     try {
-        const { userId } = req.params;
-        const profile = await userModel.findOne({ userId });
+        // console.log("req.user:", req.user);
+        // const userId  = req.user._id;
+        const {userId}  = req.params;
+        const profile = await userModel.findById(userId);
         if (!profile) {
             return res.status(404).json({ message: "Profile not found" });
         }
