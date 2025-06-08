@@ -18,7 +18,7 @@ export const authMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: "Unauthorized access : user not found" });
         }
 
-        req.user = user._id;
+        req.user = user;
         next();
     } catch (error) {
         if (error.name === "TokenExpiredError") {

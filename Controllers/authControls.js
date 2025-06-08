@@ -1,4 +1,4 @@
-import user from "../models/authModels.js"
+import userModel from "../models/authModels.js"
 import bcrypt from "bcryptjs";
 import { generateToken } from "../utils/jwt.js";
 import { sendOtpMail } from "../utils/mailer.js"
@@ -13,7 +13,7 @@ export const signup = async (req, res) => {
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
-        const userExists = await user.findOne({ email });
+        const userExists = await userModel.findOne({ email });
         if (userExists) {
             return res.status(400).json({ message: "user already exists" });
         }
@@ -23,7 +23,7 @@ export const signup = async (req, res) => {
 
 
         try {
-            const userCreated = await user.create({
+            const userCreated = await userModel.create({
                 name,
                 contact,
                 college,
@@ -45,7 +45,14 @@ export const signup = async (req, res) => {
             }).status(201).json({
                 message: "user created successfully",
                 userId: userCreated._id.toString(),
-                token: generateToken(userCreated)
+                token: generateToken(userCreated),
+                cookies: req.cookies.token,
+                user: {
+                    name: userCreated.name,
+                    contact: userCreated.contact,
+                    college: userCreated.college,
+                    email: userCreated.email
+                }
             })
             console.log("token:", token);
             console.log("cookies:", req.cookies.token);
@@ -72,8 +79,8 @@ export const login = async (req, res) => {
 
         // Find user by email or phone
         const userExists = email
-            ? await user.findOne({ email })
-            : await user.findOne({ contact });
+            ? await userModel.findOne({ email })
+            : await userModel.findOne({ contact });
 
         if (!userExists) {
             return res.status(400).json({ message: "User not found" });
@@ -93,10 +100,16 @@ export const login = async (req, res) => {
         }).status(200).json({
             message: "login successfully",
             userId: userExists._id.toString(),
-            token: token
+            token: token,
+            cookies: req.cookies.token,
+            user: {
+                name: userExists.name,
+                contact: userExists.contact,
+                college: userExists .college,
+                email: userExists.email
+            }
         });
-        console.log(token)
-        //show cookie in console
+        console.log("token : ", token);
         console.log("cookies:", req.cookies.token);
     } catch (error) {
         res.status(500).json({ 'internal server error2': error })
@@ -125,7 +138,7 @@ export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const userExists = await user.findOne({ email });
+        const userExists = await userModel.findOne({ email });
 
         if (!email) {
             return res.status(400).json({ message: "please fill all the required fields" });
@@ -161,7 +174,7 @@ export const resetPassword = async (req, res) => {
             return res.status(400).json({ message: "please fill all the required fields" });
         }
 
-        const userOtp = await user.findOne({ otp });
+        const userOtp = await userModel.findOne({ otp });
         if (!userOtp) {
             return res.status(400).json({ message: "Invalid Otp" });
         }
@@ -172,7 +185,7 @@ export const resetPassword = async (req, res) => {
 
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash(password, salt);
-        const userPassword = await user.findByIdAndUpdate(userOtp._id, { password: hashPassword }, { new: true });
+        const userPassword = await userModel.findByIdAndUpdate(userOtp._id, { password: hashPassword }, { new: true });
 
         userOtp.otp = null;
         userOtp.expiresIn = null;
@@ -208,12 +221,12 @@ export const googleLogin = async (req, res) => {
 
         const payload = ticket.getPayload();
         const { name, contact, email, college } = payload;
-        const userFind = await user.findOne({ email });
+        const userFind = await userModel.findOne({ email });
         if (!userFind) {
             const salt = await bcrypt.genSalt(10);
             const hashedPassword = await bcrypt.hash(password, salt);
 
-            const CreateUser = await user.create({
+            const CreateUser = await userModel.create({
                 name,
                 college,
                 contact,
@@ -221,7 +234,7 @@ export const googleLogin = async (req, res) => {
                 password: hashedPassword
             });
 
-            if(!CreateUser){
+            if (!CreateUser) {
                 res.status(404).json({
                     message: "user can not been created by userId "
                 })
@@ -234,17 +247,21 @@ export const googleLogin = async (req, res) => {
                 sameSite: "none"
             }).status(200).json({
                 message: "Google login successfully",
-                userId: user._id.toString(),
-                CreateUser :{
+                userId: CreateUser._id.toString(),
+                CreateUser: {
                     name: CreateUser.name,
                     email: CreateUser.email,
                     contact: CreateUser.contact
                 },
                 token: token
-            }).json({ message: "Google login successfully", userId: user._id.toString(), token: token });
+            }).json({
+                message: "Google login successfully",
+                userId: CreateUser._id.toString(),
+                token: token
+            });
             console.log(token)
         }
-        
+
 
 
     } catch (error) {
