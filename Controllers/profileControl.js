@@ -39,13 +39,14 @@ export const updateProfile = async (req, res) => {
             return res.status(404).json({ message: "Please provide userId" });
         }
 
-        const { name, email, phoneNumber, profilePicture } = req.body;
+        const { name, email, contact,college , profilePicture } = req.body;
 
         const updatedProfile = await userModel.findByIdAndUpdate(userId, {
             userId,
             name,
             email,
-            phoneNumber,
+            contact,
+            college,
             profilePicture
         }, { new: true });
 
@@ -59,7 +60,8 @@ export const updateProfile = async (req, res) => {
                 userId: updatedProfile._id,
                 name: updatedProfile.name,
                 email: updatedProfile.email,
-                phoneNumber: updatedProfile.phoneNumber,
+                contact: updatedProfile.contact,
+                college: updatedProfile.college,
                 profilePicture: updatedProfile.profilePicture
             }
         })
