@@ -12,11 +12,12 @@ export const getProfile = async (req, res) => {
         if (!profile) {
             return res.status(404).json({ message: "Profile not found" });
         }
-        const { name, email, phoneNumber, profilePicture } = profile;
+        const { name, email, contact, college, profilePicture } = profile;
         const userProfile = {
             name,
             email,
-            phoneNumber,
+            contact,
+            college,
             profilePicture
         }
         res.status(200).json({
