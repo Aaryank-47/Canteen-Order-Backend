@@ -162,7 +162,10 @@ export const getAllFoodItems = async (req, res) => {
         if (foods.length === 0) {
             return res.status(404).json({ message: "No food items found" });
         }        
-        res.status(200).json({ message: "All food items fetched successfully", foods });
+        res.status(200).json({ 
+            message: "All food items fetched successfully", 
+            foodslist : foods
+        });
     } catch (error) {
         console.error("Error fetching all food items:", error);
         res.status(500).json({ message: "Internal server error on fetching all food items" });
