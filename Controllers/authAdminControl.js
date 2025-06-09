@@ -75,19 +75,25 @@ export const adminLogin = async (req, res) => {
 
         try {
             const token = await generateToken(adminExists);
+
+            if(!token){
+                res.satus(400).json({message: "Error in token generation"});
+                console.log("Error in token generation")
+            }
+
             res.cookie("token", token, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax"
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
-                token: generateToken(adminExists),
+                token: token,
                 adminInfo: adminExists
             })
         } catch (error) {
-            return res.status(500).json({ message: "Admin login failed", error });
+            return res.status(500).json({ message: "Admin login failed", error: error });
         }
 
     } catch (error) {

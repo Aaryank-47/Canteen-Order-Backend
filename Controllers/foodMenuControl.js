@@ -4,13 +4,13 @@ import cloudinary from "../utils/cloudinary.js"
 export const createFoodItem = async (req, res) => {
     try {
         const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = req.body;
-        if (!foodName || !foodCategory || !foodPrice || !foodDescription || isVeg === undefined ) {
+        if (!foodName || !foodCategory || !foodPrice || !foodDescription || isVeg === undefined) {
             return res.status(400).json({ message: "Please fill all the fields" });
         }
 
-        // if (!req.file) {
-        //     return res.status(400).json({ message: "Image file is required" });
-        // }
+        if (!req.file) {
+            return res.status(400).json({ message: "Image file is required" });
+        }
 
         const existingFood = await foodModel.findOne({ foodName });
         if (existingFood) {
@@ -24,7 +24,7 @@ export const createFoodItem = async (req, res) => {
         const newFood = new foodModel({
             foodName,
             foodPrice,
-           // foodImage: result.secure_url,
+            foodImage: req.file.path,
             foodCategory,
             foodDescription,
             isVeg
@@ -48,7 +48,7 @@ export const getFoodMenu = async (req, res) => {
         const foodMenu = foods.map((food) => {
             const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = food;
             return {
-                 _id: food._id,
+                _id: food._id,
                 foodName,
                 foodPrice,
                 foodImage,
@@ -104,7 +104,7 @@ export const getFoodMenu = async (req, res) => {
 export const updateFoodItem = async (req, res) => {
 
     try {
-        const{role,_id: adminId,adminName  } = req.admin;
+        const { role, _id: adminId, adminName } = req.admin;
         if (role !== "admin") {
             return res.status(403).json({ message: "You are not authorized to perform this action" });
         }
@@ -112,15 +112,20 @@ export const updateFoodItem = async (req, res) => {
         if (!id) {
             return res.status(400).json({ message: "Please provide id" });
         }
-        const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = req.body;
+        const { foodName, foodPrice, foodCategory, foodDescription, isVeg } = req.body;
+
+        // If a new image file was uploaded, req.file.path is the new Cloudinary URL.
+        // Otherwise, use the existing image URL sent via req.body or from your database.
+        const foodImageUrl = req.file ? req.file.path : req.body.foodImage;
+
         const updatedFood = await foodModel.findByIdAndUpdate(id, {
             foodName,
             foodPrice,
-            foodImage,
+            foodImage: foodImageUrl,
             foodCategory,
             foodDescription,
             isVeg,
-            updatedBy: adminId   
+            updatedBy: adminId
 
         }, { new: true });
 
@@ -161,10 +166,10 @@ export const getAllFoodItems = async (req, res) => {
         const foods = await foodModel.find();
         if (foods.length === 0) {
             return res.status(404).json({ message: "No food items found" });
-        }        
-        res.status(200).json({ 
-            message: "All food items fetched successfully", 
-            foodslist : foods
+        }
+        res.status(200).json({
+            message: "All food items fetched successfully",
+            foodslist: foods
         });
     } catch (error) {
         console.error("Error fetching all food items:", error);
