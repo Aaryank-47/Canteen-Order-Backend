@@ -1,5 +1,6 @@
 import orderModel from "../models/orderModel.js";
 import foodModel from "../models/foodModel.js";
+import mongoose from 'mongoose';
 
 export const placeOrder = async (req, res) => {
 
@@ -22,12 +23,12 @@ export const placeOrder = async (req, res) => {
 
         const getOrderNumber = async () => {
             const latestOrder = await orderModel.findOne().sort({ orderNumber: -1 });
-            let nextOrderNumber; 
-            const today = Date.now();
-            today.setUTCDate(0,0,0,0)
-            if (!latestOrder|| latestOrder.createdAt < today) {
-                nextOrderNumber  = 1;
-            }else {
+            let nextOrderNumber;
+            const today = new Date();
+            today.setUTCHours(0, 0, 0, 0)
+            if (!latestOrder || latestOrder.createdAt < today) {
+                nextOrderNumber = 1;
+            } else {
                 nextOrderNumber = latestOrder.orderNumber + 1;
             }
             return nextOrderNumber;
@@ -51,7 +52,7 @@ export const placeOrder = async (req, res) => {
         return res.status(201).json({
             message: "Order placed successfully",
             order: newOrder,
-            orderNumber: nextOrderNumber
+            orderNumber: order_number
         });
     } catch (error) {
         console.log(error);
@@ -286,6 +287,10 @@ export const orderHistory = async (req, res) => {
             userId,
             status: { $in: ["Delivered", "Cancelled"] }
         }).sort({ createdAt: -1 });
+
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: "Invalid user ID" });
+        }
 
         if (!orders || orders.length === 0) {
             return res.status(404).json({
