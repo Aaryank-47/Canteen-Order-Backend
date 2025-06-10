@@ -1,43 +1,37 @@
-import  mongoose from 'mongoose';
+import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
-    userId:{
+    userId: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User'
     },
-    // collegeId:{
-    //     type: mongoose.SchemaTypes.ObjectId,
-    //     ref: 'College'
-    // },
-    orderNumber:{
+     orderNumber: {
         type: Number
     },
-    foodItems:[
+    foodItems: [  // This should match what you're actually using in your data
         {
-            foodId:{
-                type: mongoose.SchemaTypes.ObjectId,
-                ref: 'Food'
+            foodId: {  // This matches your actual data structure
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Food",
+                required: true
             },
-            foodQuantity:{
+            foodQuantity: {
                 type: Number,
+                required: true,
                 default: 1
             }
         }
     ],
-    status:{
+    status: {
         type: String,
         enum: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"],
         default: "Pending"
     },
-    totalPrice:{
+    totalPrice: {
         type: Number,
         default: 0
-    },
-    createdAt:{
-        type: Date,
-        default: Date.now
     }
-},{
+}, {
     timestamps: true
 });
 

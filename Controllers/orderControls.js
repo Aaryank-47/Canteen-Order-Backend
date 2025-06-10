@@ -19,6 +19,8 @@ export const placeOrder = async (req, res) => {
             }
             const quantity = item.foodQuantity || 1;
             totalPrice += food.foodPrice * quantity;
+
+
         }
 
         const getOrderNumber = async () => {
@@ -54,6 +56,7 @@ export const placeOrder = async (req, res) => {
             order: newOrder,
             orderNumber: order_number
         });
+
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Internal server error" });
@@ -279,35 +282,46 @@ export const orderUpdatesByUser = async (req, res) => {
     }
 }
 
+
+
 export const orderHistory = async (req, res) => {
     const { userId } = req.params;
+
+    // ✅ Check for valid ObjectId early
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+    }
+
     try {
-
-        const orders = await orderModel.find({
-            userId,
-            status: { $in: ["Delivered", "Cancelled"] }
-        }).sort({ createdAt: -1 });
-
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ message: "Invalid user ID" });
-        }
+        // ✅ Fetch and populate food item details inside each order
+        const orders = await orderModel
+            .find({
+                userId,
+                status: { $in: ["Delivered", "Cancelled", "Pending", "Preparing", "Ready"] },
+            })
+            .populate({
+                path: 'foodItems.foodId',
+                select: 'foodName foodPrice foodImage'
+            })
+            .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
             return res.status(404).json({
-                message: "This users has not ordered for any food till date yet"
-            })
+                message: "This user has not ordered any food till date.",
+                orders: orders,
+            });
         }
 
         return res.status(200).json({
             message: "Order history fetched successfully",
-            orders: orders
-        })
-
+            orders: orders,
+        });
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Internal server error" });
     }
-}
+};
+
 
 export const getAllOrders = async (req, res) => {
     try {
