@@ -15,9 +15,11 @@ const app = express();
 //CORS
 const corsOptions = {
     origin: 'http://localhost:5173',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
-    optionsSuccessStatus: 204 
+    optionsSuccessStatus: 204,
+    exposedHeaders: ['set-cookie']
 };
 
 //MIDDLEWARES

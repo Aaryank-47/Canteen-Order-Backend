@@ -41,7 +41,8 @@ export const signup = async (req, res) => {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax",
+                path: "/"
             }).status(201).json({
                 message: "user created successfully",
                 userId: userCreated._id.toString(),
@@ -54,7 +55,7 @@ export const signup = async (req, res) => {
                     email: userCreated.email
                 }
             })
-            console.log("token:", token);
+            console.log("usertoken:", token);
             console.log("cookies:", req.cookies.token);
         } catch (error) {
             console.log(error)
@@ -92,11 +93,12 @@ export const login = async (req, res) => {
         }
 
         const token = generateToken(userExists);
-        res.cookie("token", token, {
+        res.cookie("userToken", token, {
             httpOnly: true,
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
             secure: false,
-            sameSite: "none"
+            sameSite: "lax",
+            path:"/"
         }).status(200).json({
             message: "login successfully",
             userId: userExists._id.toString(),
@@ -110,7 +112,9 @@ export const login = async (req, res) => {
             }
         });
         console.log("token : ", token);
-        console.log("cookies:", req.cookies.token);
+        console.log("req.cookies : ", req.cookies); // Add this
+        console.log("req.cookies.token : ", req.cookies.token);
+        console.log("Response headers : ", res.getHeaders());
     } catch (error) {
         res.status(500).json({ 'internal server error2': error })
     }
