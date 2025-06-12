@@ -36,7 +36,7 @@ export const adminSignup = async (req, res) => {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax"
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
@@ -81,7 +81,7 @@ export const adminLogin = async (req, res) => {
                 console.log("Error in token generation")
             }
 
-            res.cookie("token", token, {
+            res.cookie("adminToken", token, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
@@ -92,6 +92,12 @@ export const adminLogin = async (req, res) => {
                 token: token,
                 adminInfo: adminExists
             })
+
+
+            console.log("adminToken: ", token);
+            console.log("adminCookies: ", req.cookies.token);
+            console.log("admincookie-> req.cookies: ",req.cookies)
+
         } catch (error) {
             return res.status(500).json({ message: "Admin login failed", error: error });
         }
