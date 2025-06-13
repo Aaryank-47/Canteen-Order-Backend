@@ -24,9 +24,9 @@ const corsOptions = {
 
 //MIDDLEWARES
 app.use(cors(corsOptions));       
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({extended:true}));
-app.use(cookieParser());
 
 
 // COOP Header Middleware

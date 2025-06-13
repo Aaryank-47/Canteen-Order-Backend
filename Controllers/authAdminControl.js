@@ -1,4 +1,4 @@
-import admin from "../models/adminModel.js";
+import AdminModel from "../models/adminModel.js";
 import bcrypt from "bcryptjs";
 import {generateAdminToken} from "../utils/jwt.js";
 import { OAuth2Client } from "google-auth-library";
@@ -14,7 +14,7 @@ export const adminSignup = async (req, res) => {
         if (!adminName || !collegeName || !phoneNumber || !adminEmail || !adminPassword || !role) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
-        const adminExists = await admin.findOne({ adminEmail });
+        const adminExists = await AdminModel.findOne({ adminEmail });
         if (adminExists) {
             return res.status(400).json({ message: "Admin already exists" });
         }
@@ -22,7 +22,7 @@ export const adminSignup = async (req, res) => {
         const hashPassword = await bcrypt.hash(adminPassword, salt);
 
         try {
-            const adminCreated = await admin.create({
+            const adminCreated = await AdminModel.create({
                 adminName,
                 collegeName,
                 phoneNumber,
@@ -61,23 +61,27 @@ export const adminSignup = async (req, res) => {
 export const adminLogin = async (req, res) => {
     try {
         const { adminEmail, adminPassword } = req.body;
+
         if (!adminEmail || !adminPassword) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
-        const adminExists = await admin.findOne({ adminEmail });
+
+        const adminExists = await AdminModel.findOne({adminEmail});
+
         if (!adminExists) {
-            return res.status(400).json({ message: "Admin does not exist" });
+            return res.status(400).json({ message: "Admin does not exist", error : error.message || error });
         }
+
         const isMatch = await bcrypt.compare(adminPassword, adminExists.adminPassword);
         if (!isMatch) {
-            return res.status(400).json({ message: "Wrong password man!!!" });
+            return res.status(400).json({ message: "Wrong password man!!!", error : error.message || error });
         }
 
         try {
-            const token = await generateToken(adminExists);
+            const token = await generateAdminToken(adminExists);
 
             if(!token){
-                res.satus(400).json({message: "Error in token generation"});
+                res.status(400).json({message: "Error in token generation"});
                 console.log("Error in token generation")
             }
 
@@ -99,11 +103,11 @@ export const adminLogin = async (req, res) => {
             console.log("admincookie-> req.cookies: ",req.cookies)
 
         } catch (error) {
-            return res.status(500).json({ message: "Admin login failed", error: error });
+            return res.status(500).json({ message: "Admin login failed", error : error.message || error.error });
         }
 
     } catch (error) {
-        return res.status(500).json({ message: "Admin Interal Server Error 2", error });
+        return res.status(500).json({ message: "Admin Interal Server Error 2", error : error.message || error });
 
     }
 }
@@ -137,12 +141,12 @@ export const adminGoogleAuthLogin = async (req,res) =>{
         });
 
         const payload = ticket.getPayload();
-        const {adminName, PhoneNumber, adminEmail} = payload;
-        const googleAdmin = await admin.findOne({adminEmail});
+        const {adminName, phoneNumber, adminEmail} = payload;
+        const googleAdmin = await AdminModel.findOne({adminEmail});
         if(!googleAdmin){
             const salt = await bcrypt.genSalt(10);
             const  hashedadminPassword = await bcrypt.hash(adminPassword, salt);
-            googleAdmin = await admin.create({
+            googleAdmin = await AdminModel.create({
                 adminName,
                 phoneNumber,
                 adminEmail,
@@ -150,7 +154,7 @@ export const adminGoogleAuthLogin = async (req,res) =>{
             })
         } 
 
-        const token = await fenerateToken(googleAdmin);
+        const token = await generateToken(googleAdmin);
         res.cookie("token",token,{
             httOnly : true,
             expires : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),

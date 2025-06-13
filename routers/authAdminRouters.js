@@ -8,7 +8,7 @@ const router = express.Router();
 router.route('/signup').post(adminSignup);
 router.route('/login').post(adminLogin);
 router.route('/logout').post(adminLogout);
-router.route('/check-admin-middleware').get(adminMiddleware,(req,res)=>{
+router.route('/verify-token').get(adminMiddleware,(req,res)=>{
     res.send("admin middleware is working");
 })
 

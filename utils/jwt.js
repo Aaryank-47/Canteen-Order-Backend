@@ -39,7 +39,7 @@ export const generateAdminToken = (admin) =>{
             { expiresIn: '5d' }
         );
     } catch (error) {
-        console.log(error);
+        console.log(error.message);
         
     }
 }

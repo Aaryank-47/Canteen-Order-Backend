@@ -63,7 +63,7 @@ export const signup = async (req, res) => {
         }
 
     } catch (error) {
-        res.status(500).json({ "internal server error1": error })
+        res.status(500).json({ "internal server error1": error.message || error })
     }
 }
 
@@ -93,12 +93,18 @@ export const login = async (req, res) => {
         }
 
         const token = generateToken(userExists);
+
+        if (!token) {
+            res.status(400).json({ message: "Error in token generation" });
+            console.log("Error in token generation")
+        }
+
         res.cookie("userToken", token, {
             httpOnly: true,
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
             secure: false,
             sameSite: "lax",
-            path:"/"
+            path: "/"
         }).status(200).json({
             message: "login successfully",
             userId: userExists._id.toString(),
@@ -107,7 +113,7 @@ export const login = async (req, res) => {
             user: {
                 name: userExists.name,
                 contact: userExists.contact,
-                college: userExists .college,
+                college: userExists.college,
                 email: userExists.email
             }
         });
