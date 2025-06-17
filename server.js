@@ -26,12 +26,25 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json({
-  type: (req) => !req.originalUrl.includes('/api/v1/foods/create')
+  type: (req) =>{ !req.originalUrl.includes('/api/v1/foods/create') &&  !req.originalUrl.includes('/api/v1/foods/update/') }
 }));
 app.use(express.urlencoded({
   extended: true,
-  type: (req) => !req.originalUrl.includes('/api/v1/foods/create')
+  type: (req) => { !req.originalUrl.includes('/api/v1/foods/create') &&  !req.originalUrl.includes('/api/v1/foods/update/') }
 }));
+// app.use(express.json({
+//   type: (req) => {
+//     return !req.originalUrl.includes('/api/v1/foods/create') &&
+//            !req.originalUrl.includes('/api/v1/foods/update/');
+//   }
+// }));
+// app.use(express.urlencoded({
+//   extended: true,
+//   type: (req) => {
+//     return !req.originalUrl.includes('/api/v1/foods/create') &&
+//            !req.originalUrl.includes('/api/v1/foods/update/');
+//   }
+// }));
 
 
 // COOP Header Middleware

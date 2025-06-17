@@ -3,17 +3,18 @@ import cloudinary from "../utils/cloudinary.js"
 
 export const createFoodItem = async (req, res) => {
     try {
-        const { foodName, foodPrice, foodCategory, foodDescription, isVeg } = req.body;
+        const { foodName, foodPrice, foodCategory, foodDescription } = req.body;
+        const isVeg = req.body.isVeg === "true" || req.body.isVeg === true;
         // const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = req.body;
         // isVeg = isVeg === "true" || isVeg === true;
-        if (!foodName || !foodCategory || !foodPrice || !foodDescription ||  typeof isVeg !== "boolean" === undefined) {
+        if (!foodName || !foodCategory || !foodPrice || !foodDescription || typeof isVeg !== "boolean") {
             return res.status(400).json({ message: "Please fill all the fields" });
         }
 
         if (!req.file) {
             return res.status(400).json({ message: "Image file is required" });
         }
-        console.log('Received file:', req.file); // Check if file exists
+        console.log('Received file:', req.file);
         console.log('Received body:', req.body);
         const existingFood = await foodModel.findOne({ foodName });
         if (existingFood) {
@@ -36,10 +37,106 @@ export const createFoodItem = async (req, res) => {
         res.status(201).json({ message: "Food CREATED SUCCESSFULLY", food: newFood });
     } catch (error) {
         console.error("Error creating food item:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
 
     }
 }
+
+
+export const updateFoodItem = async (req, res) => {
+
+    try {
+        const { role, _id: adminId, adminName } = req.admin;
+        if (role !== "admin") {
+            return res.status(403).json({ message: "You are not authorized to perform this action" });
+        }
+        const { id } = req.params;
+        if (!id) {
+            return res.status(400).json({ message: "Please provide id" });
+        }
+
+        const updateData = { updatedBy: adminId };
+
+        // 👇 Type converters based on schema requirements
+        const typeConverters = {
+            isVeg: val => val === "true" || val === true,
+            foodPrice: val => Number(val),
+        };
+
+        const allowedFields = ["foodName", "foodPrice", "foodCategory", "foodDescription", "isVeg"];
+
+        for (const field of allowedFields) {
+            if (req.body[field] !== undefined) {
+                const convert = typeConverters[field];
+                const convertedValue = convert ? convert(req.body[field]) : req.body[field];
+
+                if (field === "foodPrice" && isNaN(convertedValue)) {
+                    return res.status(400).json({ message: "Invalid foodPrice: must be a valid number" });
+                }
+
+                updateData[field] = convertedValue;
+            }
+        }
+
+        console.log("Received body", req.body);
+
+
+
+        // 👇 If image is provided (optional), include it
+        if (req.file && req.file.path) {
+            updateData.foodImage = req.file.path;
+        }
+
+        const updatedFood = await foodModel.findByIdAndUpdate(id, updateData, { new: true });
+
+        if (!updatedFood) {
+            return res.status(404).json({ message: "Food item not found" });
+        }
+
+        // let { foodName, foodPrice, foodCategory, foodDescription, isVeg } = req.body;
+        // isVeg = isVeg === "true" || isVeg === true;
+        // // If a new image file was uploaded, req.file.path is the new Cloudinary URL.
+        // // Otherwise, use the existing image URL sent via req.body or from your database.
+        // // const foodImageUrl = req.file ? req.file.path : req.body.foodImage;
+
+        // // if(!foodImageUrl){
+        // //     console.log("Image file is required")
+        // //     return res.status(400).json({ message: "Image file is required" });
+        // // }
+        // if(!req.file){
+        //     console.log("Image file is required")
+        //     return res.status(400).json({ message: "Image file is required" });
+        // }
+        // console.log('Received file:', req.file); 
+        // console.log('Received body:', req.body);
+
+        // const updatedFood = await foodModel.findByIdAndUpdate(id, {
+        //     foodName,
+        //     foodPrice,
+        //     foodImage: req.file.path,
+        //     foodCategory,
+        //     foodDescription,
+        //     isVeg,
+        //     updatedBy: adminId
+
+        // }, { new: true });
+
+        // if (!updatedFood) {
+        //     return res.status(404).json({ message: "Food item not found" });
+        // }
+
+        res.status(200).json({ message: "Food item updated successfully", Food: updatedFood, adminName: adminName });
+
+    } catch (error) {
+        console.error("Error updating food item:", error);
+        res.status(500).json({ message: "Internal server error on updating food item" });
+
+    }
+}
+
 
 export const getFoodMenu = async (req, res) => {
     try {
@@ -104,46 +201,6 @@ export const getFoodMenu = async (req, res) => {
 //     }
 // }
 
-export const updateFoodItem = async (req, res) => {
-
-    try {
-        const { role, _id: adminId, adminName } = req.admin;
-        if (role !== "admin") {
-            return res.status(403).json({ message: "You are not authorized to perform this action" });
-        }
-        const { id } = req.params;
-        if (!id) {
-            return res.status(400).json({ message: "Please provide id" });
-        }
-        const { foodName, foodPrice, foodCategory, foodDescription, isVeg } = req.body;
-
-        // If a new image file was uploaded, req.file.path is the new Cloudinary URL.
-        // Otherwise, use the existing image URL sent via req.body or from your database.
-        const foodImageUrl = req.file ? req.file.path : req.body.foodImage;
-
-        const updatedFood = await foodModel.findByIdAndUpdate(id, {
-            foodName,
-            foodPrice,
-            foodImage: foodImageUrl,
-            foodCategory,
-            foodDescription,
-            isVeg,
-            updatedBy: adminId
-
-        }, { new: true });
-
-        if (!updatedFood) {
-            return res.status(404).json({ message: "Food item not found" });
-        }
-
-        res.status(200).json({ message: "Food item updated successfully", Food: updatedFood, adminName: adminName });
-
-    } catch (error) {
-        console.error("Error updating food item:", error);
-        res.status(500).json({ message: "Internal server error on updating food item" });
-
-    }
-}
 
 export const deleteFoodItem = async (req, res) => {
     try {

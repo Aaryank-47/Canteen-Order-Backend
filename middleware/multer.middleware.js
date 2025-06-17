@@ -13,7 +13,7 @@ const storage = new CloudinaryStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  const validTypes = ["image/jpeg", "image/png", "application/pdf"];
+  const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
   if (validTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
