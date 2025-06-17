@@ -3,15 +3,18 @@ import cloudinary from "../utils/cloudinary.js"
 
 export const createFoodItem = async (req, res) => {
     try {
-        const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = req.body;
-        if (!foodName || !foodCategory || !foodPrice || !foodDescription || isVeg === undefined) {
+        const { foodName, foodPrice, foodCategory, foodDescription, isVeg } = req.body;
+        // const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = req.body;
+        // isVeg = isVeg === "true" || isVeg === true;
+        if (!foodName || !foodCategory || !foodPrice || !foodDescription ||  typeof isVeg !== "boolean" === undefined) {
             return res.status(400).json({ message: "Please fill all the fields" });
         }
 
         if (!req.file) {
             return res.status(400).json({ message: "Image file is required" });
         }
-
+        console.log('Received file:', req.file); // Check if file exists
+        console.log('Received body:', req.body);
         const existingFood = await foodModel.findOne({ foodName });
         if (existingFood) {
             return res.status(400).json({ message: "Food Already Existed" });
@@ -169,7 +172,8 @@ export const getAllFoodItems = async (req, res) => {
         }
         res.status(200).json({
             message: "All food items fetched successfully",
-            foodslist: foods
+            foodslist: foods,
+
         });
     } catch (error) {
         console.error("Error fetching all food items:", error);

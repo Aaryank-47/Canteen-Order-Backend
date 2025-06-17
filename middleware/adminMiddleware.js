@@ -6,7 +6,8 @@ dotenv.config();
 
 export const adminMiddleware = async (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        const token = req.cookies.adminToken;
+        console.log("token in middleware : ",token)
         if (!token) {
             return res.status(401).json({
                 success: false,
@@ -16,18 +17,26 @@ export const adminMiddleware = async (req, res, next) => {
 
         // Verify JWT
         const decoded = jwt.verify(token, process.env.JWT_SK);
+        console.log("decoded",decoded)
 
         // Corrected this line ↓
-        const admin = await adminModel.findById(decoded.userId).select("-adminPassword");
+        const admin = await adminModel.findById(decoded.adminId).select("-adminPassword");
+        console.log("admin inside middleware : ", admin);
+        
 
         if (!admin || admin.role !== "admin") {
             return res.status(403).json({
                 success: false,
                 message: "Access denied: Admins only",
+                error: "Invalid role or admin not found"
             });
         }
+        console.log("Admin role:", admin?.role);
+        console.log("Cookies:", req.cookies);
+        // console.log("Decoded JWT:", decoded);
+        // console.log("Admin found:", admin);
 
-        req.admin = admin; // Attach admin info to request
+        req.admin = admin;
         next();
 
     } catch (error) {
@@ -35,6 +44,7 @@ export const adminMiddleware = async (req, res, next) => {
             return res.status(401).json({
                 success: false,
                 message: "Token expired. Please login again.",
+                error: error.message
             });
         }
 

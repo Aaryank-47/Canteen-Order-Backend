@@ -1,6 +1,6 @@
 import AdminModel from "../models/adminModel.js";
 import bcrypt from "bcryptjs";
-import {generateAdminToken} from "../utils/jwt.js";
+import { generateAdminToken } from "../utils/jwt.js";
 import { OAuth2Client } from "google-auth-library";
 import dotenv from "dotenv";
 dotenv.config();
@@ -11,7 +11,7 @@ export const adminSignup = async (req, res) => {
     try {
         const { adminName, collegeName, phoneNumber, adminEmail, adminPassword, role } = req.body;
 
-        if (!adminName || !collegeName || !phoneNumber || !adminEmail || !adminPassword || !role) {
+        if (!adminName || !collegeName || !phoneNumber || !adminEmail || !adminPassword|| !role ) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
         const adminExists = await AdminModel.findOne({ adminEmail });
@@ -31,8 +31,8 @@ export const adminSignup = async (req, res) => {
                 role,
             })
 
-            const token = await generateAdminToken(adminCreated);
-            res.cookie("adminToken", token, {
+            const adminToken = await generateAdminToken(adminCreated);
+            res.cookie("adminToken", adminToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
@@ -40,12 +40,12 @@ export const adminSignup = async (req, res) => {
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
-                token: token,
+                token: adminToken,
                 adminInfo: adminCreated
             })
 
-            console.log("adminToken: ", token);
-            console.log("adminCookies: ", req.cookies.token);
+            console.log("adminToken: ", adminToken);
+            console.log("adminCookies: ", req.cookies.adminToken);
 
         } catch (error) {
             res.status(500).json({ message: "Admin creation failed", error });
@@ -53,6 +53,7 @@ export const adminSignup = async (req, res) => {
         }
 
     } catch (error) {
+        console.log("INternal server error for signup");
         return res.status(500).json({ message: "Admin Interal Server Error ", error });
     }
 }
@@ -66,26 +67,26 @@ export const adminLogin = async (req, res) => {
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
-        const adminExists = await AdminModel.findOne({adminEmail});
+        const adminExists = await AdminModel.findOne({ adminEmail });
 
         if (!adminExists) {
-            return res.status(400).json({ message: "Admin does not exist", error : error.message || error });
+            return res.status(400).json({ message: "Admin does not exist", error: error.message || error });
         }
 
         const isMatch = await bcrypt.compare(adminPassword, adminExists.adminPassword);
         if (!isMatch) {
-            return res.status(400).json({ message: "Wrong password man!!!", error : error.message || error });
+            return res.status(400).json({ message: "Wrong password man!!!", error: error.message || error });
         }
 
         try {
-            const token = await generateAdminToken(adminExists);
+            const adminToken = await generateAdminToken(adminExists);
 
-            if(!token){
-                res.status(400).json({message: "Error in token generation"});
+            if (!adminToken) {
+                res.status(400).json({ message: "Error in token generation" });
                 console.log("Error in token generation")
             }
 
-            res.cookie("adminToken", token, {
+            res.cookie("adminToken", adminToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
@@ -93,73 +94,75 @@ export const adminLogin = async (req, res) => {
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
-                token: token,
+                adminToken : adminToken,
                 adminInfo: adminExists
             })
 
 
-            console.log("adminToken: ", token);
-            console.log("adminCookies: ", req.cookies.token);
-            console.log("admincookie-> req.cookies: ",req.cookies)
+            console.log("adminToken: ", adminToken);
+            console.log("adminCookies: ", req.cookies.adminToken);
+            console.log("admincookie-> req.cookies: ", req.cookies)
 
         } catch (error) {
-            return res.status(500).json({ message: "Admin login failed", error : error.message || error.error });
+            return res.status(500).json({ message: "Admin login failed", error: error.message || error.error });
         }
 
     } catch (error) {
-        return res.status(500).json({ message: "Admin Interal Server Error 2", error : error.message || error });
+        console.error("❌ Internal login error for:", req.body.adminEmail);
+        console.error("❌ Error:", error);
+        return res.status(500).json({ message: "Admin Interal Server Error 2", error: error.message || error });
 
     }
 }
 
-export const adminLogout = async(req,res)=>{
+export const adminLogout = async (req, res) => {
     try {
         // const email = req.body.adminEmail;
 
         return res.cookie("token", null, {
-            httpOnly:true,
-            expires:new Date(Date.now()),
-            secure:false,
-            sameSite:"none"
-        }).status(200).json({message:`Admin  Logout Successfully`})
+            httpOnly: true,
+            expires: new Date(Date.now()),
+            secure: false,
+            sameSite: "none"
+        }).status(200).json({ message: `Admin  Logout Successfully` })
         // }).status(200).json({message:`Admin with ${email} Logout Successfully`})
     } catch (error) {
         return res.status(500).json({ message: "Admin Interal Server Error 3", error });
-        
+
     }
 }
 
 
-export const adminGoogleAuthLogin = async (req,res) =>{
+export const adminGoogleAuthLogin = async (req, res) => {
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     try {
-        const {idToken} = req.body;
-        
+        const { idToken } = req.body;
+
         const ticket = await client.verifyIdToken({
             idToken,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
         const payload = ticket.getPayload();
-        const {adminName, phoneNumber, adminEmail} = payload;
-        const googleAdmin = await AdminModel.findOne({adminEmail});
-        if(!googleAdmin){
+        const { adminName, phoneNumber, adminEmail } = payload;
+        const googleAdmin = await AdminModel.findOne({ adminEmail });
+        if (!googleAdmin) {
             const salt = await bcrypt.genSalt(10);
-            const  hashedadminPassword = await bcrypt.hash(adminPassword, salt);
+            const hashedadminPassword = await bcrypt.hash(adminPassword, salt);
             googleAdmin = await AdminModel.create({
                 adminName,
                 phoneNumber,
                 adminEmail,
                 adminPassword: hashedadminPassword,
             })
-        } 
+        }
 
         const token = await generateToken(googleAdmin);
-        res.cookie("token",token,{
-            httOnly : true,
-            expires : new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            secure : false,
-            sameSite : "none"
+        res.cookie("token", token, {
+            httOnly: true,
+            expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+            secure: false,
+            sameSite: "none"
         }).status(200).json({
             message: "Admin login successfully",
             adminId: googleAdmin._id.toString(),
@@ -169,6 +172,6 @@ export const adminGoogleAuthLogin = async (req,res) =>{
 
     } catch (error) {
         return res.status(500).json({ message: "Admin Interal Server Error 4", error });
-        
+
     }
 }
