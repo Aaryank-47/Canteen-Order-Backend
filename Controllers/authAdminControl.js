@@ -100,8 +100,8 @@ export const adminLogin = async (req, res) => {
 
 
             console.log("adminToken: ", adminToken);
-            console.log("adminCookies: ", req.cookies.adminToken);
-            console.log("admincookie-> req.cookies: ", req.cookies)
+            console.log("while loggingIn with 'req.cookies.adminToken' adminCookies is : ", req.cookies.adminToken);
+            console.log("while loggingIn with 'req.cookies' admincookie-> req.cookies is : ", req.cookies)
 
         } catch (error) {
             return res.status(500).json({ message: "Admin login failed", error: error.message || error.error });

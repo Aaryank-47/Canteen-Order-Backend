@@ -63,7 +63,7 @@ app.use("/api/v1/users", authRoutes);
 app.use("/api/v1/admin", authAdminRoutes);
 app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/orders", orderRoutes);
-app.use("/api/v1/college", collegeRouters);
+app.use("/api/v1/colleges", collegeRouters);
 
 
 //PORT 

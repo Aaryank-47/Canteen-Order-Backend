@@ -32,7 +32,7 @@ export const adminMiddleware = async (req, res, next) => {
             });
         }
         console.log("Admin role:", admin?.role);
-        console.log("Cookies:", req.cookies);
+        console.log("Cookies via admin middleware :", req.cookies);
         // console.log("Decoded JWT:", decoded);
         // console.log("Admin found:", admin);
 

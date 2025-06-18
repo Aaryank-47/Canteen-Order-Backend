@@ -13,7 +13,7 @@ export const registration = async (req, res) => {
 
         const collegeExists = await collegeModel.findOne({ collegeCode });
         if (collegeExists) {
-            return res.status(400).json({ message: "College already exists so please login with password" });
+            return res.status(400).json({ message: "College already exists" });
         }
 
         const salt = await bcrypt.genSalt(10);
@@ -33,23 +33,24 @@ export const registration = async (req, res) => {
                 return res.status(400).json({ message: "Error in creating college" });
             }
 
-            const token = await generateCollegeAuthToken(collegeCreated);
-            if (!token) {
+            const collegeToken = await generateCollegeAuthToken(collegeCreated);
+            if (!collegeToken) {
                 return res.status(400).json({ message: "Error in generating token" });
             }
 
-            res.cookie("collegeToken", token, {
+            res.cookie("collegeToken", collegeToken, {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax"
             }).status(201).json({
                 message: "College created successfully",
                 collegeId: collegeCreated._id.toString(),
-                token: token
+                collegeToken
             });
-            console.log("token:", token);
-            console.log("cookies:", req.cookies.jwt);
+
+            console.log("collegeToken via college registration:", collegeToken);
+            console.log("cookies via college registration -> req.cookies.collegeToken:", req.cookies.collegeToken);
 
         } catch (error) {
             console.log(error);
@@ -80,23 +81,24 @@ export const login = async (req, res) => {
                 return res.status(400).json({ message: "Invalid credentials" });
             }
 
-            const token = await generateCollegeAuthToken(collegeExists);
-            if (!token) {
+            const collegeToken = await generateCollegeAuthToken(collegeExists);
+            if (!collegeToken) {
                 return res.status(400).json({ message: "Error in generating token" });
             }
-            res.cookie("collegeToken", token, {
+            res.cookie("collegeToken", collegeToken, {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax"
             }).status(200).json({
                 message: "Login successful",
                 collegeId: collegeExists._id.toString(),
-                token: token
+                collegeToken: collegeToken
             })
 
-            console.log("token:", token);
-            console.log("cookies:", req.cookies.jwtToken);
+            console.log("collegeToken:", collegeToken);
+            console.log("req.cookies via login : ",req.cookies);
+            console.log("cookies via college login -> req.cookies.collegeToken:", req.cookies.collegeToken);
 
         } catch (error) {
             console.log(error);

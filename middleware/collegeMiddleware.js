@@ -15,6 +15,8 @@ export const collegeMiddleware = async (req, res, next) => {
         }
         // Verify JWT
         const decoded = jwt.verify(token, process.env.COLLEGE_JWT_SK);
+        console.log("decoded : ", decoded);
+
         const college = await collegeModel.findById(decoded.collegeId).select("-password");
         if (!college) {
             return res.status(401).json({
@@ -22,6 +24,10 @@ export const collegeMiddleware = async (req, res, next) => {
                 message: "Unauthorized: College not found",
             });
         }
+        console.log("college : ", college);
+        console.log("College Cookies via middleware : ", req.cookies)
+        
+        
         req.college = college;
         next();
 
