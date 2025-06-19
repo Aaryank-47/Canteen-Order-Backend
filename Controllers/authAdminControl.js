@@ -175,3 +175,21 @@ export const adminGoogleAuthLogin = async (req, res) => {
 
     }
 }
+
+
+export const getAllAdmins = async (req, res) => {
+    try {
+        const admins = await AdminModel.find({}).select("adminName");
+        if (admins.length === 0) {
+            return res.status(404).json({ message: "No admins found" });
+        }
+        return res.status(200).json({
+            message: "All admins fetched successfully",
+            admins: admins
+        });
+    } catch (error) {
+        console.error("Error fetching all admins:", error);
+        return res.status(500).json({ message: "Internal server error while fetching admins", error: error.message || error });
+    }
+}
+

@@ -97,7 +97,7 @@ export const login = async (req, res) => {
             })
 
             console.log("collegeToken:", collegeToken);
-            console.log("req.cookies via login : ",req.cookies);
+            console.log("req.cookies via login : ", req.cookies);
             console.log("cookies via college login -> req.cookies.collegeToken:", req.cookies.collegeToken);
 
         } catch (error) {
@@ -189,21 +189,26 @@ export const deleteCollege = async (req, res) => {
 
 export const addCollegeCanteens = async (req, res) => {
     try {
-        const { adminId } = req.body;
-        
+        const { adminIds } = req.body;
+        const { collegeId } = req.params;
 
-        if (!adminId) {
+        const existingCollege = await collegeModel.findById(collegeId);
+        if (!existingCollege) {
+            return res.status(404).json({ message: "College not found" });
+        }
+
+        if (!adminIds || !Array.isArray(adminIds) || adminIds.length === 0) {
             return res.status(400).json({ message: "Please provide adminId (canteen ID)" });
         }
 
-        const canteen = await adminModel.findById(adminId);
-        if (!canteen) {
-            return res.status(404).json({ message: "Canteen not found" });
+        const canteens = await adminModel.find({ _id: { $in: adminIds } });
+        if (canteens.length !== adminIds.length) {
+            return res.status(404).json({ message: "Some canteens not found" });
         }
 
         const updatedCollege = await collegeModel.findByIdAndUpdate(
-            req.college._id,
-            { $addToSet: { canteens: adminId } },
+            collegeId,
+            { $addToSet: { canteens: { $each: adminIds } } },
             { new: true }
         ).populate("canteens", "-password");
 
@@ -213,6 +218,33 @@ export const addCollegeCanteens = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Error adding college canteens:", error);
         res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
+
+
+export const getSelectedCanteens = async (req, res) => {
+    try {
+        const { collegeId } = req.params;
+
+        const college = await collegeModel.findById(collegeId).populate("canteens", "-adminPassword -__v");
+
+        if (!college) {
+            return res.status(404).json({
+                success: false,
+                message: "College not found"
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Selected canteens fetched successfully",
+            selectedCanteens: college.canteens
+        });
+    } catch (error) {
+        console.error("Error fetching selected canteens:", error);
+        return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
+    }
+};
+
