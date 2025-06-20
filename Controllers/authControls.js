@@ -286,7 +286,9 @@ export const googleLogin = async (req, res) => {
 export const getUser = async (req, res) => {
     try {
         const user = await userModel.findById(req.user._id).select("-password -otp -expiresIn");
+        console.log("User ID:", req.user._id);
         console.log("User fetched:", user);
+        
         if (!user) {
             console.log("User not found");
             return res.status(404).json({ message: "User not found" });

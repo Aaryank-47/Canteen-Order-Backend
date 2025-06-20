@@ -6,22 +6,17 @@ dotenv.config();
 
 export const authMiddleware = async (req, res, next) => {
     try {
-        // const authHeader = req.headers['authorization'];
-        // const userToken = authHeader && authHeader.split(' ')[1];
+        const token = req.cookies.userToken;
+        console.log("userToken via authMiddleware : ", token);
 
-        // const userToken = req.cookies.userToken || req.headers.authorization?.split(" ")[1];
-
-        const userToken = req.cookies.userToken;
-        console.log("userToken via authMiddleware : ", userToken);
-
-        if (!userToken) {
+        if (!token) {
             return res.status(401).json({
                 success: false,
                 message: "Unauthorized access : No Token Provided "
             });
         }
 
-        const decoded = jwt.verify(userToken, process.env.JWT_SK);
+        const decoded = jwt.verify(token, process.env.JWT_SK);
         console.log("Decoded JWT in authMiddleware:", decoded);
 
         const user = await User.findById(decoded.userId).select("-password");
@@ -35,7 +30,7 @@ export const authMiddleware = async (req, res, next) => {
         console.log("User found in authMiddleware:", user);
         console.log("Cookies via authMiddleware:", req.cookies);
 
-        res.status(200).json({ message: "User authenticated successfully" });
+
         req.user = user;
         next();
     } catch (error) {
@@ -46,7 +41,7 @@ export const authMiddleware = async (req, res, next) => {
                 error: error.message
             });
         }
-        
+
         console.error("Error in authMiddleware:", error);
         return res.status(500).json({
             success: false,
