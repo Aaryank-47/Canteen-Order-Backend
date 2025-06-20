@@ -35,19 +35,18 @@ export const signup = async (req, res) => {
             //     return res.status(400).json({ message: "Profile not created" });
             // }   
 
-            const token = await generateToken(userCreated);
+            const userToken = await generateToken(userCreated);
 
-            res.cookie("userToken", token, {
+            res.cookie("userToken", userToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                sameSite: "lax",
-                path: "/"
+                sameSite: "lax"
             }).status(201).json({
                 message: "user created successfully",
                 userId: userCreated._id.toString(),
-                token: generateToken(userCreated),
-                cookies: req.cookies.token,
+                userToken: userToken,
+                // cookies: req.cookies.userToken,
                 user: {
                     name: userCreated.name,
                     contact: userCreated.contact,
@@ -55,8 +54,8 @@ export const signup = async (req, res) => {
                     email: userCreated.email
                 }
             })
-            console.log("usertoken:", token);
-            console.log("cookies:", req.cookies.token);
+            console.log("usertoken:", userToken);
+            console.log("cookies:", req.cookies.userToken);
         } catch (error) {
             console.log(error)
             res.status(500).json({ error });
@@ -92,36 +91,42 @@ export const login = async (req, res) => {
             return res.status(401).json({ message: "Invalid credentials" });
         }
 
-        const token = generateToken(userExists);
+        try {
+            const userToken = generateToken(userExists);
 
-        if (!token) {
-            res.status(400).json({ message: "Error in token generation" });
-            console.log("Error in token generation")
-        }
-
-        res.cookie("userToken", token, {
-            httpOnly: true,
-            expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            secure: false,
-            sameSite: "lax",
-            path: "/"
-        }).status(200).json({
-            message: "login successfully",
-            userId: userExists._id.toString(),
-            token: token,
-            cookies: req.cookies.token,
-            user: {
-                name: userExists.name,
-                contact: userExists.contact,
-                college: userExists.college,
-                email: userExists.email
+            if (!userToken) {
+                res.status(400).json({ message: "Error in token generation" });
+                console.log("Error in token generation")
             }
-        });
-        console.log("token : ", token);
-        console.log("req.cookies : ", req.cookies); // Add this
-        console.log("req.cookies.token : ", req.cookies.token);
-        console.log("Response headers : ", res.getHeaders());
+
+            res.cookie("userToken", userToken, {
+                httpOnly: true,
+                expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+                secure: false,
+                sameSite: "lax"
+            }).status(200).json({
+                message: "login successfully",
+                userId: userExists._id.toString(),
+                userToken: userToken,
+                // cookies: req.cookies.userToken,
+                user: {
+                    name: userExists.name,
+                    contact: userExists.contact,
+                    college: userExists.college,
+                    email: userExists.email
+                }
+            });
+            console.log("userToken via users login : ", userToken);
+            console.log("req.cookies via users login : ", req.cookies); // Add this
+            console.log("req.cookies.userToken via users login : ", req.cookies.userToken);
+            console.log("Response headers : ", res.getHeaders());
+        } catch (error) {
+
+            console.error("Error generating token:", error.message);
+            res.status(500).json({ message: "Error generating token", error: error.message || error });
+        }
     } catch (error) {
+        console.error("❌ Error:", error);
         res.status(500).json({ 'internal server error2': error })
     }
 
@@ -136,8 +141,8 @@ export const logout = async (req, res) => {
         //     secure: false,
         //     sameSite: "none"
         // }).status(200).json({message:"logged out null successfully", token: null})
-        res.clearCookie("token");
-        res.status(200).json({ message: "logged out clear successfully", token: null });
+        res.clearCookie("userToken");
+        res.status(200).json({ message: "logged out clear successfully", userToken: null });
     }
     catch (error) {
         res.status(500).json({ 'internal server error3': error })
@@ -201,7 +206,7 @@ export const resetPassword = async (req, res) => {
         userOtp.expiresIn = null;
         await userOtp.save();
 
-        res.clearCookie("token", null, {
+        res.clearCookie("userToken", null, {
             httpOnly: true,
             secure: true,
             sameSite: "None"
@@ -249,8 +254,8 @@ export const googleLogin = async (req, res) => {
                     message: "user can not been created by userId "
                 })
             }
-            const token = await generateToken(CreateUser);
-            res.cookie("token", token, {
+            const userToken = await generateToken(CreateUser);
+            res.cookie("userToken", userToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
@@ -263,13 +268,9 @@ export const googleLogin = async (req, res) => {
                     email: CreateUser.email,
                     contact: CreateUser.contact
                 },
-                token: token
-            }).json({
-                message: "Google login successfully",
-                userId: CreateUser._id.toString(),
-                token: token
+                userToken: userToken
             });
-            console.log(token)
+            console.log(userToken)
         }
 
 
@@ -282,3 +283,26 @@ export const googleLogin = async (req, res) => {
 
 }
 
+export const getUser = async (req, res) => {
+    try {
+        const user = await userModel.findById(req.user._id).select("-password -otp -expiresIn");
+        console.log("User fetched:", user);
+        if (!user) {
+            console.log("User not found");
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.status(200).json({
+            message: "User fetched successfully",
+            user: {
+                name: user.name,
+                contact: user.contact,
+                college: user.college,
+                email: user.email
+            }
+        });
+    } catch (error) {
+        console.error('Error fetching user:', error);
+        res.status(500).json({ message: 'Internal Server error', error: error.message });
+    }
+}

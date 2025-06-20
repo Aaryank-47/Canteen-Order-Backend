@@ -70,7 +70,7 @@ export const adminLogin = async (req, res) => {
         const adminExists = await AdminModel.findOne({ adminEmail });
 
         if (!adminExists) {
-            return res.status(400).json({ message: "Admin does not exist", error: error.message || error });
+            return res.status(400).json({ message: "Admin does not exist" });
         }
 
         const isMatch = await bcrypt.compare(adminPassword, adminExists.adminPassword);

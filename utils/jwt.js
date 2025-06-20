@@ -34,7 +34,7 @@ export const generateCollegeAuthToken= (college) => {
 export const generateAdminToken = (admin) =>{
     try {
         return jwt.sign(
-            { adminId: admin._id.toString(), email: admin.email },
+            { adminId: admin._id.toString(), adminEmail: admin.adminEmail },
             jwt_secret,
             { expiresIn: '5d' }
         );
