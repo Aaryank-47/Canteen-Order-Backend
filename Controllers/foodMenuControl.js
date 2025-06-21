@@ -1,4 +1,5 @@
 import foodModel from "../models/foodModel.js";
+import orderModel from "../models/orderModel.js";
 import cloudinary from "../utils/cloudinary.js"
 
 export const createFoodItem = async (req, res) => {
@@ -258,6 +259,61 @@ export const getSingleFoodItem = async (req, res) => {
     }
 }
 
+
+export const topSellingFood = async (req, res) => {
+    try {
+
+        const foodCountMap = {};
+        const orders = await orderModel.find({ status:  ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] })
+
+        orders.map((order) => {
+            order.foodItems.map((item) => {
+                const foodId = item.foodId.toString();
+                const quantity = item.foodQuantity || 1; // Default to 1 if not specified
+                if (foodCountMap[foodId]) {
+                    foodCountMap[foodId] += quantity;
+                }
+                else {
+                    foodCountMap[foodId] = quantity;
+                }
+            })
+        })
+
+        // Convert the foodCountMap to an array of objects with foodId and quantity
+        const sortedFoodIds = Object.entries(foodCountMap).map(([foodId, quantity]) => ({ foodId, quantity }))
+
+        // Sort the array by quantity in descending order
+        sortedFoodIds.sort((a, b) => b.quantity - a.quantity);
+
+        // Get the top 5 selling food items
+        const topSellingFoodIds = sortedFoodIds.slice(0, 5).map(item => item.foodId);
+
+        if (topSellingFoodIds.length === 0) {
+            return res.status(404).json({ message: "No top selling food items found" });
+        }
+
+        const populatedFoods = await Promise.all(topSellingFoodIds.map(async (item) => {
+            const food = await foodModel.findById(item.foodId).lean();
+            return {
+                ...item,
+                foodName: food?.foodName,
+                // foodImage: food?.foodImage
+            };
+        }));
+
+
+        console.log("Top selling food IDs:", topSellingFoodIds);
+        res.status(200).json({
+            message: "Top selling food items fetched successfully",
+            populatedFoods
+        });
+
+    } catch (error) {
+        console.error("Error fetching top selling food:", error);
+        res.status(500).json({ message: "Internal server error on fetching top selling food" });
+
+    }
+}
 
 
 

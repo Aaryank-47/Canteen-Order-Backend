@@ -1,6 +1,7 @@
 import orderModel from "../models/orderModel.js";
 import foodModel from "../models/foodModel.js";
 import mongoose from 'mongoose';
+import { calculateTotalPrice } from "../utils/calculateTotalprice.js";
 
 export const placeOrder = async (req, res) => {
 
@@ -357,3 +358,168 @@ export const getAllOrders = async (req, res) => {
         res.status(500).json({ message: "Internal server error" });
     }
 };
+
+export const todaysOrdersCounts = async (req, res) => {
+    try {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end } });
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({ message: "No orders found for today" });
+        }
+
+        const orderCounts = orders.length;
+        console.log(`Today's orders count: ${orderCounts}`);
+
+        return res.status(200).json({
+            message: "Today's orders fetched successfully",
+            totalOrders: orderCounts
+        });
+    } catch (error) {
+        console.error("Error in todaysOrders:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
+    }
+}
+
+export const getTodaysRevenue = async (req, res) => {
+    try {
+        const start = new Date();
+        start.setHours(0, 0, 0, 0);
+
+        const end = new Date();
+        end.setHours(23, 59, 59, 999);
+
+        const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end }, status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
+        if (!orders || orders.length === 0) {
+            return res.status(404).json({ message: "No delivered orders found for today" });
+        }
+
+        const totalRevenue = await Promise.all(
+            orders.map(async (order) => await calculateTotalPrice(order.foodItems))
+        );
+
+        const totalRevenueSum = totalRevenue.reduce((acc, curr) => acc + curr, 0);
+        if (totalRevenueSum === 0) {
+            return res.status(404).json({ message: "No revenue generated today" });
+        }
+
+        console.log(`Today's total revenue: ${totalRevenueSum}`);
+        return res.status(200).json({
+            message: "Today's revenue fetched successfully",
+            totalRevenueSum
+        });
+
+    } catch (error) {
+        console.error("Error in getTodaysRevenue:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
+    }
+}
+
+export const getOrdersPerDay = async (req, res) => {
+    try {
+        const order = await orderModel.find({ status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
+
+        if (!order || order.length === 0) {
+            return res.status(404).json({ message: "No orders found" });
+        }
+
+        const orersPerDayMap = {};
+
+        order.forEach((order) => {
+            const date = new Date(order.createdAt).toISOString().split('T')[0]; // Get date in YYYY-MM-DD format
+            if (!orersPerDayMap[date]) {
+                orersPerDayMap[date] = 0;
+            }
+            orersPerDayMap[date]++;
+        });
+        const ordersPerDayArray = Object.entries(orersPerDayMap).map(([date, count]) => ({ date, count })).sort((a, b) => new Date(b.date) - new Date(a.date));;
+        if (ordersPerDayArray.length === 0) {
+            return res.status(404).json({ message: "No orders found for any day" });
+        }
+
+        console.log("Orders per day:", ordersPerDayArray);
+        return res.status(200).json({
+            message: "Orders per day fetched successfully",
+            ordersPerDay: ordersPerDayArray
+        });
+
+    } catch (error) {
+        console.error("Error in getOrdersPerDay:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
+    }
+}
+
+export const getPeakOrderHours = async (req, res) => {
+    try {
+        const now = new Date();
+        const yesterday = new Date(now);
+        yesterday.setDate(now.getDate() - 1);
+        yesterday.setHours(0, 0, 0, 0); // Start of yesterday
+        const endOfYesterday = new Date(yesterday);
+        endOfYesterday.setHours(23, 59, 59, 999); // End of yesterday
+
+        // Step 2: Filter orders of yesterday only
+        const orders = await orderModel.find({
+            status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"],
+            createdAt: { $gte: yesterday, $lte: endOfYesterday }
+        });
+
+        const slots = [
+            "9-10 AM", "10-11 AM", "11-12 PM",
+            "12-1 PM", "1-2 PM", "2-3 PM",
+            "3-4 PM", "4-5 PM", "5-6 PM"
+        ]
+
+        const timeSlotMap = {};
+        orders.forEach((order) => {
+            const hour = new Date(order.createdAt).getHours();
+            const slotIndex = Math.floor((hour - 9) / 1); // Assuming orders are between 9 AM and 6 PM
+            if (slotIndex >= 0 && slotIndex < slots.length) {
+                if (!timeSlotMap[slots[slotIndex]]) {
+                    timeSlotMap[slots[slotIndex]] = 0;
+                }
+                timeSlotMap[slots[slotIndex]]++;
+            }
+        });
+
+
+        const peakOrderHours = Object.entries(timeSlotMap)
+            .map(([slot, count]) => ({ slot, count }))
+            .sort((a, b) => b.count - a.count);
+
+        if (peakOrderHours.length === 0) {
+            return res.status(404).json({ message: "No orders found for any time slot" });
+        }
+
+        console.log("Peak order hours:", peakOrderHours);
+        return res.status(200).json({
+            message: "Peak order hours fetched successfully",
+            peakOrderHours: peakOrderHours
+        });
+
+
+    } catch (error) {
+        console.error("Error in getPeakOrderHours:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
+    }
+}

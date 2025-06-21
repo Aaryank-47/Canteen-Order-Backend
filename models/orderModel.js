@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'User'
     },
-     orderNumber: {
+    orderNumber: {
         type: Number
     },
     foodItems: [  // This should match what you're actually using in your data

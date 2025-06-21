@@ -1,4 +1,4 @@
-import { getFoodMenu, createFoodItem, updateFoodItem, deleteFoodItem, getAllFoodItems, getSingleFoodItem } from "../Controllers/foodMenuControl.js";
+import { getFoodMenu, createFoodItem, updateFoodItem, deleteFoodItem, getAllFoodItems, getSingleFoodItem, topSellingFood } from "../Controllers/foodMenuControl.js";
 import express from "express";
 import {adminMiddleware} from "../middleware/adminMiddleware.js";
 import upload from "../middleware/multer.middleware.js"
@@ -12,8 +12,8 @@ router.route("/update/:id").put(adminMiddleware,upload.single("foodImage"), upda
 // router.route("/delete/:id").delete(adminMiddleware,deleteFoodItem);
 router.route("/delete/:id").delete(deleteFoodItem);
 router.route("/").get(getAllFoodItems);
+router.route("/top-selling").get(topSellingFood);
 router.route("/:id").get(getSingleFoodItem);
-
 
 
 
