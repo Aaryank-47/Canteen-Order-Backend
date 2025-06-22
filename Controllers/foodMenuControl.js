@@ -261,59 +261,118 @@ export const getSingleFoodItem = async (req, res) => {
 
 
 export const topSellingFood = async (req, res) => {
-    try {
+  try {
+    const foodCountMap = {};
+    const orders = await orderModel.find({
+      status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"],
+    });
 
-        const foodCountMap = {};
-        const orders = await orderModel.find({ status:  ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] })
+    console.log("Orders fetched for top selling food:", orders.length);
 
-        orders.map((order) => {
-            order.foodItems.map((item) => {
-                const foodId = item.foodId.toString();
-                const quantity = item.foodQuantity || 1; // Default to 1 if not specified
-                if (foodCountMap[foodId]) {
-                    foodCountMap[foodId] += quantity;
-                }
-                else {
-                    foodCountMap[foodId] = quantity;
-                }
-            })
-        })
+    const fo = orders.forEach((order) => {
+      order.foodItems.forEach((item) => {
+        const foodId = item.foodId.toString();
+        const quantity = item.foodQuantity || 1;
+        foodCountMap[foodId] = (foodCountMap[foodId] || 0) + quantity;
+      });
+    });
 
-        // Convert the foodCountMap to an array of objects with foodId and quantity
-        const sortedFoodIds = Object.entries(foodCountMap).map(([foodId, quantity]) => ({ foodId, quantity }))
+    console.log("Food count map:", foodCountMap);
+    console.log("FO : ", fo)
 
-        // Sort the array by quantity in descending order
-        sortedFoodIds.sort((a, b) => b.quantity - a.quantity);
+    const sortedFoodIds = Object.entries(foodCountMap)
+      .map(([foodId, quantity]) => ({ foodId, quantity }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
 
-        // Get the top 5 selling food items
-        const topSellingFoodIds = sortedFoodIds.slice(0, 5).map(item => item.foodId);
+    console.log("sortedFoodIds : ", sortedFoodIds);
 
-        if (topSellingFoodIds.length === 0) {
-            return res.status(404).json({ message: "No top selling food items found" });
-        }
+    const populatedFoods = await Promise.all(
+      sortedFoodIds.map(async ({ foodId, quantity }) => {
+        const food = await foodModel.findById(foodId).lean();
+        return {
+          foodId,
+          quantity,
+          foodName: food?.foodName || "Unknown",
+        };
+      })
+    );
 
-        const populatedFoods = await Promise.all(topSellingFoodIds.map(async (item) => {
-            const food = await foodModel.findById(item.foodId).lean();
-            return {
-                ...item,
-                foodName: food?.foodName,
-                // foodImage: food?.foodImage
-            };
-        }));
+    const tsf = sortedFoodIds.map((item) => item.foodId);
+    console.log("Top selling food IDs:", tsf);
+    console.log("Populated foods:", populatedFoods);
 
 
-        console.log("Top selling food IDs:", topSellingFoodIds);
-        res.status(200).json({
-            message: "Top selling food items fetched successfully",
-            populatedFoods
-        });
+    res.status(200).json({
+      message: "Top selling food items fetched successfully",
+      topSellingFoodIds: tsf,
+      populatedFoods,
+    });
+  } catch (error) {
+    console.error("Error fetching top selling food:", error);
+    res
+      .status(500)
+      .json({ message: "Internal server error on fetching top selling food" });
+  }
+};
 
-    } catch (error) {
-        console.error("Error fetching top selling food:", error);
-        res.status(500).json({ message: "Internal server error on fetching top selling food" });
+// export const topSellingFood = async (req, res) => {
+//     try {
 
-    }
-}
+//         const foodCountMap = {};
+//         const orders = await orderModel.find({ status:  ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] })
+
+//         orders.map((order) => {
+//             order.foodItems.map((item) => {
+//                 const foodId = item.foodId.toString();
+//                 const quantity = item.foodQuantity || 1; // Default to 1 if not specified
+//                 if (foodCountMap[foodId]) {
+//                     foodCountMap[foodId] += quantity;
+//                 }
+//                 else {
+//                     foodCountMap[foodId] = quantity;
+//                 }
+//             })
+//         })
+
+//         // Convert the foodCountMap to an array of objects with foodId and quantity
+//         const sortedFoodIds = Object.entries(foodCountMap).map(([foodId, quantity]) => ({ foodId, quantity }))
+
+//         // Sort the array by quantity in descending order
+//         sortedFoodIds.sort((a, b) => b.quantity - a.quantity);
+
+//         // Get the top 5 selling food items
+//         const topSellingFoodIds = sortedFoodIds.slice(0, 5).map(item => item.foodId);
+
+//         if (topSellingFoodIds.length === 0) {
+//             return res.status(404).json({ message: "No top selling food items found" });
+//         }
+
+//         const populatedFoods = await Promise.all(topSellingFoodIds.map(async (item) => {
+//             const food = await foodModel.findById(item.foodId).lean();
+//             return {
+//                 ...item,
+//                 foodName: food?.foodName,
+//                 // foodImage: food?.foodImage
+//             };
+//         }));
+
+
+//         console.log("Top selling food IDs:", topSellingFoodIds);
+//         res.status(200).json({
+//             message: "Top selling food items fetched successfully",
+//             topSellingFoodIds,
+//             populatedFoods
+
+//         });
+
+//     } catch (error) {
+        
+//         console.error("Error fetching top selling food:", error);
+//         res.status(500).json({ message: "Internal server error on fetching top selling food" });
+
+//     }
+// }
 
 
 

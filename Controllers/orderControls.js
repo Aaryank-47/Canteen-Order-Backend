@@ -368,17 +368,31 @@ export const todaysOrdersCounts = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end } });
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({ message: "No orders found for today" });
-        }
+        const orderCounts = orders ? orders.length : 0; // Handle case where orders might be null, although find should return empty array
 
-        const orderCounts = orders.length;
         console.log(`Today's orders count: ${orderCounts}`);
 
         return res.status(200).json({
-            message: "Today's orders fetched successfully",
+            message: orders && orders.length > 0 ? "Today's orders fetched successfully" : "No orders found for today 1",
             totalOrders: orderCounts
         });
+
+
+
+        // if (!orders || orders.length === 0) {
+        //     return res.status(201).json({ 
+        //         message: "No orders found for today",
+        //         totalOrders: orders.length
+        //     });
+        // }
+
+        // const orderCounts = orders.length;
+        // console.log(`Today's orders count: ${orderCounts}`);
+
+        // return res.status(200).json({
+        //     message: "Today's orders fetched successfully",
+        //     totalOrders: orderCounts
+        // });
     } catch (error) {
         console.error("Error in todaysOrders:", error);
         res.status(500).json({
@@ -398,17 +412,24 @@ export const getTodaysRevenue = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end }, status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
-        if (!orders || orders.length === 0) {
-            return res.status(404).json({ message: "No delivered orders found for today" });
-        }
+        
+        // if (!orders || orders.length === 0) {
+        //     return res.status(404).json({ 
+        //         message: "No delivered orders found for today",
+        //         totalRevenueSum: 0
+        //     });
+        // }
 
         const totalRevenue = await Promise.all(
             orders.map(async (order) => await calculateTotalPrice(order.foodItems))
         );
 
         const totalRevenueSum = totalRevenue.reduce((acc, curr) => acc + curr, 0);
-        if (totalRevenueSum === 0) {
-            return res.status(404).json({ message: "No revenue generated today" });
+        if (totalRevenueSum === 0 || !orders || orders.length === 0) {
+            return res.status(200).json({ 
+                message: "No revenue generated today",
+                totalRevenueSum: 0
+            });
         }
 
         console.log(`Today's total revenue: ${totalRevenueSum}`);

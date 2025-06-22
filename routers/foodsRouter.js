@@ -12,7 +12,7 @@ router.route("/update/:id").put(adminMiddleware,upload.single("foodImage"), upda
 // router.route("/delete/:id").delete(adminMiddleware,deleteFoodItem);
 router.route("/delete/:id").delete(deleteFoodItem);
 router.route("/").get(getAllFoodItems);
-router.route("/top-selling").get(topSellingFood);
+router.route("/top-selling-food").get(topSellingFood);
 router.route("/:id").get(getSingleFoodItem);
 
 
