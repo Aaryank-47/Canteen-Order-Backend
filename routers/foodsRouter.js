@@ -4,16 +4,13 @@ import {adminMiddleware} from "../middleware/adminMiddleware.js";
 import upload from "../middleware/multer.middleware.js"
 const router = express.Router();
 
-router.route("/create").post(upload.single("foodImage"), createFoodItem);
+router.route("/create").post(adminMiddleware,upload.single("foodImage"), createFoodItem);
 router.route("/menu").get(getFoodMenu);
-//router.route("/add").post(addFoodItem);
 router.route("/update/:id").put(adminMiddleware,upload.single("foodImage"), updateFoodItem);
-// router.route("/update/:id").put(upload.single("foodImage"), updateFoodItem);
-// router.route("/delete/:id").delete(adminMiddleware,deleteFoodItem);
-router.route("/delete/:id").delete(deleteFoodItem);
-router.route("/").get(getAllFoodItems);
-router.route("/top-selling-food").get(topSellingFood);
-router.route("/:id").get(getSingleFoodItem);
+router.route("/delete/:id").delete(adminMiddleware,deleteFoodItem);
+router.route("/").get(adminMiddleware,getAllFoodItems);
+router.route("/top-selling-food").get(adminMiddleware,topSellingFood);
+router.route("/:id").get(adminMiddleware,getSingleFoodItem);
 
 
 

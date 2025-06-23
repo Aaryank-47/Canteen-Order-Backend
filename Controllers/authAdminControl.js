@@ -1,4 +1,5 @@
 import AdminModel from "../models/adminModel.js";
+import foodModel from "../models/foodModel.js";
 import bcrypt from "bcryptjs";
 import { generateAdminToken } from "../utils/jwt.js";
 import { OAuth2Client } from "google-auth-library";
@@ -193,3 +194,16 @@ export const getAllAdmins = async (req, res) => {
     }
 }
 
+export const getCanteenMenu = async (req,res) =>{
+    try {
+        const { role, _id: adminId } = req.admin;
+        if (role !== "admin") {
+            return res.status(403).json({ message: "Access denied" });
+        }
+        const canteenMenu = await foodModel.find();
+    } catch (error) {
+        console.error("Error fetching canteen menu:", error);
+        res.status(500).json({ message: "Internal server error on fetching canteen menu" });
+        
+    }
+}

@@ -51,6 +51,15 @@ const adminSchema = new mongoose.Schema({
              
         }
     ],
+    foodId:{
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: 'Food',
+        default: null
+    },
+    isActive: {
+        type: Boolean,
+        default: true  
+    },
     role :{
         type: String,
         enum: ["admin", "user"],
@@ -59,7 +68,15 @@ const adminSchema = new mongoose.Schema({
     createdAt: { 
         type: Date, 
         default: Date.now 
-    }
+    },
+    dailyOrderCounter: {
+    type: Number,
+    default: 1
+  },
+  lastOrderDate: {
+    type: Date,
+    default: new Date(0) // Initialize to epoch
+  }
 
 });
 

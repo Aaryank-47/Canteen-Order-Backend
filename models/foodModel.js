@@ -7,7 +7,6 @@ const foodSchema = new mongoose.Schema({
     },
     foodPrice: {
         type: Number,
-        // min: 0
     },
     foodImage: {
         type: String,
@@ -16,8 +15,15 @@ const foodSchema = new mongoose.Schema({
     foodDescription: {
         type: String,
     },
+    adminId:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Admin"
+    },
     isVeg: {
         type: Boolean,
+    },
+    isActive: {
+        type: Boolean
     },
     foodCategory: {
         type: String,

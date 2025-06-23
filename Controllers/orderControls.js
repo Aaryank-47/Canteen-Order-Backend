@@ -1,62 +1,96 @@
 import orderModel from "../models/orderModel.js";
 import foodModel from "../models/foodModel.js";
+import adminModel from "../models/adminModel.js";
 import mongoose from 'mongoose';
 import { calculateTotalPrice } from "../utils/calculateTotalprice.js";
 
-export const placeOrder = async (req, res) => {
 
+
+export const placeOrder = async (req, res) => {
     const { userId, foodItems } = req.body;
+    const { adminId } = req.params;
+
     if (!userId || !foodItems || foodItems.length === 0) {
+        console.log("Invalid request body:", req.body);
         return res.status(400).json({ message: "Please provide userId and foodItems" });
     }
 
-
-    let totalPrice = 0;
+    // let totalPrice = 0;
     try {
-        for (const item of foodItems) {
-            const food = await foodModel.findById(item.foodId);
-            if (!food) {
-                return res.status(404).json({ message: `Food not found with this id:${item.foodId}` });
-            }
-            const quantity = item.foodQuantity || 1;
-            totalPrice += food.foodPrice * quantity;
-
-
+        const canteen = await adminModel.findById(adminId);
+        if (!canteen) {
+            return res.status(404).json({ message: "Canteen not found" });
         }
 
-        const getOrderNumber = async () => {
-            const latestOrder = await orderModel.findOne().sort({ orderNumber: -1 });
-            let nextOrderNumber;
-            const today = new Date();
-            today.setUTCHours(0, 0, 0, 0)
-            if (!latestOrder || latestOrder.createdAt < today) {
-                nextOrderNumber = 1;
-            } else {
-                nextOrderNumber = latestOrder.orderNumber + 1;
-            }
-            return nextOrderNumber;
+        const today = new Date();
+        const lastOrderDay = canteen.lastOrderDate.getDate();
+
+        if (today.getDate() !== lastOrderDay ||
+            today.getMonth() !== canteen.lastOrderDate.getMonth() ||
+            today.getFullYear() !== canteen.lastOrderDate.getFullYear()) {
+            canteen.dailyOrderCounter = 1;
         }
-        const order_number = await getOrderNumber();
 
+        const orderNumber = canteen.dailyOrderCounter;
+        console.log("Order number for today:", orderNumber);
 
-        const newOrder = await orderModel.create({
-            userId,
-            foodItems,
-            totalPrice,
-            status: "Pending",
-            orderNumber: order_number,
-            createdAt: new Date()
+        const foodIds = foodItems.map(item => item.foodId);
+        console.log("Food IDs to validate:", foodIds);
+
+        const validItems = await foodModel.find({
+            _id: { $in: foodIds },
+            adminId: adminId,
+            isActive: true
         });
 
-        if (!newOrder) {
-            return res.status(500).json({ message: "Failed to place order" });
+        // Add this debug code right before your query:
+        // console.log("Searching for foods with:", {
+        //     ids: foodIds,
+        //     isActive: true
+        // });
+
+        // Check if IDs are valid MongoDB IDs
+        console.log("Are IDs valid?", {
+            id1: mongoose.Types.ObjectId.isValid(foodIds[0]),
+            id2: mongoose.Types.ObjectId.isValid(foodIds[1])
+        });
+
+        console.log("Valid food items found:", validItems.length);
+        console.log("Total food items count:", foodItems.length);
+
+
+        if (validItems.length !== foodItems.length) {
+            return res.status(400).json({
+                message: "Invalid items detected",
+                validItemsCount: validItems.length,
+                expectedCount: foodItems.length
+            });
         }
 
-        return res.status(201).json({
-            message: "Order placed successfully",
-            order: newOrder,
-            orderNumber: order_number
+        // 5. Create order
+        const order = new orderModel({
+            orderNumber,
+            user: userId,
+            canteen: adminId,
+            items: foodItems.map(item => ({
+                food: item.foodId,
+                quantity: item.foodQuantity || 1
+            })),
+            status: 'Pending'
         });
+
+        // 6. Update counters
+        canteen.dailyOrderCounter += 1;
+        canteen.lastOrderDate = today;
+        await canteen.save();
+        await order.save();
+
+        res.status(201).json({
+            success: true,
+            orderNumber,
+            message: `Order #${orderNumber} placed successfully`
+        });
+
 
     } catch (error) {
         console.log(error);
@@ -64,6 +98,135 @@ export const placeOrder = async (req, res) => {
 
     }
 }
+
+// controllers/orderController.js
+export const getCanteenOrders = async (req, res) => {
+    try {
+        const { _id: requestingAdminId, role } = req.admin;
+        const { adminId: targetCanteenId } = req.params;
+        const { status, date } = req.query;
+
+        // 1. Authorization - Verify requesting admin owns this canteen
+        if (role !== "admin" || !targetCanteenId.equals(requestingAdminId)) {
+            return res.status(403).json({
+                success: false,
+                message: "Unauthorized access to orders"
+            });
+        }
+
+        // 2. Build base query
+        const query = {
+            canteen: targetCanteenId
+        };
+
+        // 3. Add optional filters
+        if (status) {
+            query.status = status; // Filter by status (pending/preparing/ready)
+        }
+
+        if (date) {
+            const startDate = new Date(date);
+            startDate.setHours(0, 0, 0, 0);
+
+            const endDate = new Date(date);
+            endDate.setHours(23, 59, 59, 999);
+
+            query.createdAt = {
+                $gte: startDate,
+                $lte: endDate
+            };
+        }
+
+        // 4. Fetch orders with populated user details
+        const orders = await orderModel.find(query)
+            .populate('user', 'name phone email')
+            .populate('items.food', 'foodName foodPrice')
+            .sort({ createdAt: -1 });
+
+        // 5. Format response
+        res.status(200).json({
+            success: true,
+            count: orders.length,
+            canteenId: targetCanteenId,
+            orders: orders.map(order => ({
+                orderNumber: order.orderNumber,
+                user: order.user,
+                items: order.items,
+                total: order.items.reduce((sum, item) => sum + (item.food.foodPrice * item.quantity), 0),
+                status: order.status,
+                createdAt: order.createdAt
+            }))
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch orders",
+            error: error.message || "Internal server error"
+        });
+    }
+};
+// export const placeOrder = async (req, res) => {
+
+//     const { userId, foodItems } = req.body;
+//     if (!userId || !foodItems || foodItems.length === 0) {
+//         return res.status(400).json({ message: "Please provide userId and foodItems" });
+//     }
+
+
+//     let totalPrice = 0;
+//     try {
+//         for (const item of foodItems) {
+//             const food = await foodModel.findById(item.foodId);
+//             if (!food) {
+//                 return res.status(404).json({ message: `Food not found with this id:${item.foodId}` });
+//             }
+//             const quantity = item.foodQuantity || 1;
+//             totalPrice += food.foodPrice * quantity;
+
+
+//         }
+
+//         const getOrderNumber = async () => {
+//             const latestOrder = await orderModel.findOne().sort({ orderNumber: -1 });
+//             let nextOrderNumber;
+//             const today = new Date();
+//             today.setUTCHours(0, 0, 0, 0)
+//             if (!latestOrder || latestOrder.createdAt < today) {
+//                 nextOrderNumber = 1;
+//             } else {
+//                 nextOrderNumber = latestOrder.orderNumber + 1;
+//             }
+//             return nextOrderNumber;
+//         }
+//         const order_number = await getOrderNumber();
+
+
+//         const newOrder = await orderModel.create({
+//             userId,
+//             foodItems,
+//             totalPrice,
+//             status: "Pending",
+//             orderNumber: order_number,
+//             createdAt: new Date()
+//         });
+
+//         if (!newOrder) {
+//             return res.status(500).json({ message: "Failed to place order" });
+//         }
+
+//         return res.status(201).json({
+//             message: "Order placed successfully",
+//             order: newOrder,
+//             orderNumber: order_number
+//         });
+
+//     } catch (error) {
+//         console.log(error);
+//         res.status(500).json({ message: "Internal server error" });
+
+//     }
+// }
 
 // ------------------ order updates for both admin and users in single functions------------------
 
@@ -412,7 +575,7 @@ export const getTodaysRevenue = async (req, res) => {
         end.setHours(23, 59, 59, 999);
 
         const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end }, status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
-        
+
         // if (!orders || orders.length === 0) {
         //     return res.status(404).json({ 
         //         message: "No delivered orders found for today",
@@ -426,7 +589,7 @@ export const getTodaysRevenue = async (req, res) => {
 
         const totalRevenueSum = totalRevenue.reduce((acc, curr) => acc + curr, 0);
         if (totalRevenueSum === 0 || !orders || orders.length === 0) {
-            return res.status(200).json({ 
+            return res.status(200).json({
                 message: "No revenue generated today",
                 totalRevenueSum: 0
             });

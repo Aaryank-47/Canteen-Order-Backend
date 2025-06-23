@@ -5,8 +5,8 @@ import { adminMiddleware } from '../middleware/adminMiddleware.js';
 // import { authOrAdminAuthMiddleware } from '../middleware/authoradminauthMidlleware.js';
 const router = express.Router();
 
+router.route('/admins/:adminId/place-order').post(authMiddleware,placeOrder);
 // router.route('/place-order').post(authMiddleware,placeOrder);
-router.route('/place-order').post(placeOrder);
 router.route('/order-history/:userId').get(orderHistory);
 router.route('/admin-order-update/:orderId/:status').put(adminMiddleware,orderUpdatesByAdmin);
 router.route('/user-order-cancel/:orderId').put(authMiddleware,orderUpdatesByUser);
@@ -17,4 +17,4 @@ router.route('/todays-revenue').get(adminMiddleware,getTodaysRevenue);
 router.route('/orders-per-day').get(adminMiddleware,getOrdersPerDay);
 router.route('/peak-order-hours').get(adminMiddleware,getPeakOrderHours);
 
-export default router;  
+export default router;     
