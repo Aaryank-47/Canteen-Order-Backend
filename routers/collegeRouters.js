@@ -22,4 +22,4 @@ router.route('/add-college-canteens/:collegeId').post(collegeMiddleware, addColl
 router.route('/get-college-canteens').get(authMiddleware, collegeMiddleware, getCollegeCanteens);
 router.route('/remove-college-canteen/:collegeId').delete(collegeMiddleware, removeCollegeCanteen);
 
-export default router;
+export default router;      

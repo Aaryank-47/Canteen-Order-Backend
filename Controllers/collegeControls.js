@@ -2,6 +2,7 @@ import collegeModel from '../models/collegeModels.js';
 import { generateCollegeAuthToken } from '../utils/jwt.js';
 import bcrypt from 'bcryptjs';
 import adminModel from '../models/adminModel.js';
+import mongoose from 'mongoose';
 
 export const registration = async (req, res) => {
     try {
@@ -192,13 +193,13 @@ export const addCollegeCanteens = async (req, res) => {
         const { adminIds } = req.body;
         const { collegeId } = req.params;
 
-        const existingCollege = await collegeModel.findById(collegeId);
-        if (!existingCollege) {
-            return res.status(404).json({ message: "College not found" });
-        }
-
         if (!adminIds || !Array.isArray(adminIds) || adminIds.length === 0) {
             return res.status(400).json({ message: "Please provide adminId (canteen ID)" });
+        }
+
+        const college = await collegeModel.findById(collegeId);
+        if (!college) {
+            return res.status(404).json({ message: "College not found" });
         }
 
         const canteens = await adminModel.find({ _id: { $in: adminIds } });
@@ -206,16 +207,54 @@ export const addCollegeCanteens = async (req, res) => {
             return res.status(404).json({ message: "Some canteens not found" });
         }
 
-        const updatedCollege = await collegeModel.findByIdAndUpdate(
-            collegeId,
-            { $addToSet: { canteens: { $each: adminIds } } },
-            { new: true }
-        ).populate("canteens", "-password");
+        //  Update both collections in a transaction
+        // const session = await mongoose.startSession();
+        // session.startTransaction();
 
-        res.status(200).json({
-            message: "Canteen added to college successfully",
-            college: updatedCollege
-        });
+        // Prepare transaction-like behavior without actual transactions
+        let updatedCollege;
+        try {
+            // 1. Update college's canteens array
+            updatedCollege = await collegeModel.findByIdAndUpdate(
+                collegeId,
+                { $addToSet: { canteens: { $each: adminIds } } },
+                { new: true }
+            ).populate("canteens", "adminName");
+
+            console.log("updatedCollege : ", updatedCollege)
+
+            // 2. Update each canteen's college reference
+            const addedCanteens = await adminModel.updateMany(
+                { _id: { $in: adminIds } },
+                {
+                    $set: {
+                        collegeId: collegeId,
+                        collegeName: college.collegeName
+                    }
+                }
+            );
+
+            console.log("addedCanteens : ", addedCanteens)
+
+            res.status(200).json({
+                message: "Canteen added to college successfully",
+                college: updatedCollege,
+                canteens_added: addedCanteens
+            });
+
+        } catch (error) {
+            // await session.abortTransaction();
+            // session.endSession();
+            // throw error;
+            // Manual rollback if second operation fails
+            if (updatedCollege) {
+                await collegeModel.findByIdAndUpdate(
+                    collegeId,
+                    { $pull: { canteens: { $in: adminIds } } }
+                );
+            }
+            throw error;
+        }
 
     } catch (error) {
         console.error("Error adding college canteens:", error);
@@ -314,43 +353,91 @@ export const getCollegeCanteens = async (req, res) => {
 }
 
 export const removeCollegeCanteen = async (req, res) => {
-    try {
-        const {collegeId } = req.params;
-        const { canteenId } = req.body;
 
-        if( !collegeId || !canteenId) {
-            return res.status(400).json({ message: "Please provide collegeId and canteenId" });
+    // const session = await mongoose.startsession()
+    // session.startTransaction();
+
+    try {
+        const { collegeId } = req.params;
+        const { adminId } = req.body;
+
+        if (!collegeId || !adminId) {
+            // await session.abortTransaction();
+            return res.status(400).json({
+                message: "Please provide collegeId and adminId"
+            });
         }
 
         const college = await collegeModel.findById(collegeId);
-        if(!college){
+        if (!college) {
             console.log(`That particular college with ${collegeId} doesn't exist`);
+
+            return res.status(404).json({
+                message: `Canteen with ID ${adminId} not found`
+            });
+        }
+
+        const canteen = await adminModel.findById(adminId);
+        if(!canteen){
+            console.log('That particular canteen doesnot exist');
+            return res.status(400).json({
+                message: `Canteen with ID ${adminId} not found`
+            })
         }
 
         console.log("collegeId:", collegeId);
-        console.log("canteenId:", canteenId);
+        console.log("adminId:", adminId);
 
-        const canteenRemoval = await collegeModel.findByIdAndUpdate(
-            collegeId, 
-            { $pull: { canteens: canteenId } }, 
-            { new: true } 
-        );
-
-        if (!canteenRemoval) {
-            return res.status(404).json({ message: "Canteen not found in this college" });
+        // Check if canteen exists in college's canteens array
+        if (!college.canteens.includes(adminId)) {
+            return res.status(404).json({ message: "Canteen not associated with this college" });
         }
 
-        console.log(`canteens that are removed from college ${college.collegeName}:`, canteenRemoval);
 
-        return res.status(200).json({ 
-            success: true,
-            message: `Canteen removed successfully from ${college.collegeName}`,
-            updatedCollege: canteenRemoval
-        });
+        let updatedCollege;
+        try {
+            // 1. Remove from college
+            updatedCollege = await collegeModel.findByIdAndUpdate(
+                collegeId,
+                { $pull: { canteens: adminId } },
+                { new: true }
+            );
+
+            // 2. Remove college reference from canteen
+            await adminModel.findByIdAndUpdate(
+                adminId,
+                {
+                    $unset: {
+                        collegeId: "",
+                        collegeName: ""
+                    }
+                }
+            );
+
+            return res.status(200).json({
+                success: true,
+                message: `${canteen.adminName} removed successfully from ${college.collegeName}`,
+                updatedCollege
+            });
+
+        } catch (error) {
+            // Manual rollback if needed
+            if (updatedCollege) {
+                await collegeModel.findByIdAndUpdate(
+                    collegeId,
+                    { $addToSet: { canteens: adminId } }
+                );
+            }
+            throw error;
+        }
 
     } catch (error) {
+
         console.error("Error removing college canteen:", error);
-        res.status(500).json({ message: "Internal server error on removing college canteen" });
-        
+        res.status(500).json({
+            message: "Internal server error",
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+
     }
 }
