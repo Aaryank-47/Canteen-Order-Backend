@@ -13,7 +13,7 @@ router.route('/verify-token').get(adminMiddleware, (req, res) => {
     res.status(200).json({
         success: true,
         message: "Admin middleware is working",
-        admin: req.admin, // Optional: include admin info
+        admin: req.admin
     });
 })
 router.route('/get-all-admins').get(getAllAdmins);

@@ -1,4 +1,5 @@
 import AdminModel from "../models/adminModel.js";
+import collegeModel from "../models/collegeModels.js";
 import foodModel from "../models/foodModel.js";
 import bcrypt from "bcryptjs";
 import { generateAdminToken } from "../utils/jwt.js";
@@ -12,20 +13,27 @@ export const adminSignup = async (req, res) => {
     try {
         const { adminName, collegeName, phoneNumber, adminEmail, adminPassword, role } = req.body;
 
-        if (!adminName || !collegeName || !phoneNumber || !adminEmail || !adminPassword|| !role ) {
+        if (!adminName || !collegeName || !phoneNumber || !adminEmail || !adminPassword || !role) {
             return res.status(400).json({ message: "Please fill all fields" });
         }
+
+        const college = await collegeModel.findOne({ collegeName : collegeName.trim() });
+        if (!college) {
+            return res.status(400).json({ message: "College does not exist" });
+        }
+        
         const adminExists = await AdminModel.findOne({ adminEmail });
         if (adminExists) {
             return res.status(400).json({ message: "Admin already exists" });
         }
+        
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash(adminPassword, salt);
 
         try {
             const adminCreated = await AdminModel.create({
                 adminName,
-                collegeName,
+                collegeId: college._id,
                 phoneNumber,
                 adminEmail,
                 adminPassword: hashPassword,
@@ -95,7 +103,7 @@ export const adminLogin = async (req, res) => {
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
-                adminToken : adminToken,
+                adminToken: adminToken,
                 adminInfo: adminExists
             })
 
@@ -194,7 +202,7 @@ export const getAllAdmins = async (req, res) => {
     }
 }
 
-export const getCanteenMenu = async (req,res) =>{
+export const getCanteenMenu = async (req, res) => {
     try {
         const { role, _id: adminId } = req.admin;
         if (role !== "admin") {
@@ -204,6 +212,8 @@ export const getCanteenMenu = async (req,res) =>{
     } catch (error) {
         console.error("Error fetching canteen menu:", error);
         res.status(500).json({ message: "Internal server error on fetching canteen menu" });
-        
+
     }
 }
+
+

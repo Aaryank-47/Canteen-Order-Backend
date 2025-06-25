@@ -23,16 +23,17 @@ export const placeOrder = async (req, res) => {
         }
 
         const today = new Date();
-        const lastOrderDay = canteen.lastOrderDate.getDate();
-
-        if (today.getDate() !== lastOrderDay ||
+        const isNewDay = !canteen.lastOrderDate ||
+            today.getDate() !== canteen.lastOrderDate.getDate() ||
             today.getMonth() !== canteen.lastOrderDate.getMonth() ||
-            today.getFullYear() !== canteen.lastOrderDate.getFullYear()) {
+            today.getFullYear() !== canteen.lastOrderDate.getFullYear();
+
+        if (isNewDay) {
             canteen.dailyOrderCounter = 1;
         }
 
-        const orderNumber = canteen.dailyOrderCounter;
-        console.log("Order number for today:", orderNumber);
+        const orderNumber = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}${String(today.getDate()).padStart(2, '0')}-${String(canteen.dailyOrderCounter).padStart(4, '0')}`;
+        console.log("Generated order number:", orderNumber);
 
         const foodIds = foodItems.map(item => item.foodId);
         console.log("Food IDs to validate:", foodIds);
@@ -44,16 +45,20 @@ export const placeOrder = async (req, res) => {
         });
 
         // Add this debug code right before your query:
-        // console.log("Searching for foods with:", {
-        //     ids: foodIds,
-        //     isActive: true
-        // });
+        console.log("Searching for foods with:", {
+            ids: foodIds,
+            adminId: adminId,
+            isActive: true
+        });
+
+        console.log("Valid food items found:", validItems);
 
         // Check if IDs are valid MongoDB IDs
-        console.log("Are IDs valid?", {
-            id1: mongoose.Types.ObjectId.isValid(foodIds[0]),
-            id2: mongoose.Types.ObjectId.isValid(foodIds[1])
-        });
+        // console.log("Are IDs valid?", {
+        //     id1: mongoose.Types.ObjectId.isValid(foodIds[0]),
+        //     id2: mongoose.Types.ObjectId.isValid(foodIds[1])
+        // });
+
 
         console.log("Valid food items found:", validItems.length);
         console.log("Total food items count:", foodItems.length);
@@ -67,6 +72,20 @@ export const placeOrder = async (req, res) => {
             });
         }
 
+        const foodPriceMap = validItems.reduce((acc, food) => {
+            acc[food._id.toString()] = food.foodPrice;
+            return acc;
+        }, {});
+
+        // 2. Calculate total price
+        const totalPrice = foodItems.reduce((total, item) => {
+            const itemPrice = foodPriceMap[item.foodId] || 0; // Fallback to 0 if not found
+            const quantity = item.foodQuantity || 1; // Default to 1 if not specified
+            return total + (itemPrice * quantity);
+        }, 0);
+
+        console.log("Total price calculated:", totalPrice);
+        
         // 5. Create order
         const order = new orderModel({
             orderNumber,
@@ -74,21 +93,29 @@ export const placeOrder = async (req, res) => {
             canteen: adminId,
             items: foodItems.map(item => ({
                 food: item.foodId,
-                quantity: item.foodQuantity || 1
+                quantity: item.foodQuantity || 1,
+                price: foodPriceMap[item.foodId]
             })),
-            status: 'Pending'
+            totalPrice,
+            status: 'Pending',
+            orderDate: today
         });
 
         // 6. Update counters
         canteen.dailyOrderCounter += 1;
         canteen.lastOrderDate = today;
-        await canteen.save();
-        await order.save();
+        await Promise.all([canteen.save(), order.save()])
 
         res.status(201).json({
             success: true,
             orderNumber,
-            message: `Order #${orderNumber} placed successfully`
+            totalPrice,
+            message: `Order #${orderNumber} placed successfully`,
+            orderDetails: {
+                items: order.items,
+                status: order.status,
+                orderDate: order.orderDate
+            }
         });
 
 

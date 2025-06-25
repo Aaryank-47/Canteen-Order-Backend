@@ -1,82 +1,72 @@
 import mongoose from 'mongoose';
 
 const adminSchema = new mongoose.Schema({
-    // collegeId:{
-    //     type: mongoose.SchemaTypes.ObjectId,
-    //     ref: 'College',
-    //     unique: true,
-    //     trim: true
-    // },
-    adminName: { 
-        type: String, 
-        required: true, 
-        trim: true 
+    collegeId: {
+        type: mongoose.SchemaTypes.ObjectId,
+        ref: 'College',
+        unique: true,
+        trim: true
     },
-    phoneNumber: { 
-        type: String, 
-        required: true, 
-        match: [/^\d{10}$/, "Phone number must be 10 digits"] 
+    collegeName: {
+        type: String,
+        required: true,
+        trim: true
     },
-    adminEmail: { 
-        type: String, 
-        required: true, 
-        trim: true, 
-        match: [/\S+@\S+\.\S+/, "Invalid email format"] 
+    adminName: {
+        type: String,
+        required: true,
+        trim: true
     },
-    adminPassword: { 
-        type: String, 
-        required: true, 
-        trim: true 
+    phoneNumber: {
+        type: String,
+        required: true,
+        match: [/^\d{10}$/, "Phone number must be 10 digits"]
     },
-    otp: { 
-        type: String, 
-        default: null 
+    adminEmail: {
+        type: String,
+        required: true,
+        trim: true,
+        match: [/\S+@\S+\.\S+/, "Invalid email format"]
     },
-    otpExpire: { 
+    adminPassword: {
+        type: String,
+        required: true,
+        trim: true
+    },
+    otp: {
+        type: String,
+        default: null
+    },
+    otpExpire: {
         type: Date,
-        default: null 
+        default: null
     },
-    collegeDetails: [
-        { 
-            collegeName: { 
-                type: String, 
-                required: true, 
-                trim: true 
-            },
-            collegeId: { 
-                type: String, 
-                required: true, 
-                trim: true 
-            },
-             
-        }
-    ],
-    foodId:{
+    foodId: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'Food',
         default: null
     },
     isActive: {
         type: Boolean,
-        default: true  
+        default: true
     },
-    role :{
+    role: {
         type: String,
         enum: ["admin", "user"],
         default: "admin",
     },
-    createdAt: { 
-        type: Date, 
-        default: Date.now 
+    createdAt: {
+        type: Date,
+        default: Date.now
     },
     dailyOrderCounter: {
-    type: Number,
-    default: 1
-  },
-  lastOrderDate: {
-    type: Date,
-    default: new Date(0) // Initialize to epoch
-  }
+        type: Number,
+        default: 1
+    },
+    lastOrderDate: {
+        type: Date,
+        default: new Date(0) // Initialize to epoch
+    }
 
 });
 

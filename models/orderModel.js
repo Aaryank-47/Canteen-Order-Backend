@@ -10,7 +10,7 @@ const orderSchema = new mongoose.Schema({
         ref: 'Admin'
     },
     orderNumber: {
-        type: Number
+        type: String,
     },
     foodItems: [  // This should match what you're actually using in your data
         {

@@ -26,7 +26,7 @@ export const registration = async (req, res) => {
                 collegeCode,
                 collegeAddress,
                 collegeEmail,
-                collegePassword: hashPassword,
+                collegePassword: hashPassword
             })
 
             if (!collegeCreated) {
@@ -248,3 +248,41 @@ export const getSelectedCanteens = async (req, res) => {
     }
 };
 
+// export const getCollegeCanteens = async (req, res) => {
+//     try {
+//         const { college, role } = req.user;
+        
+//         if (!college) {
+
+//             console.error("User college information not found");
+
+//             return res.status(400).json({
+//                 message: "User college information not found",
+//                 suggestion: "Complete your profile or contact support"
+//             });
+//         }
+
+        
+//         const collegeCanteens = await adminModel.find({
+//             collegeId: college._id,
+//             role: "admin"
+//         }).select("adminName");
+        
+        
+//         if (collegeCanteens.length === 0) {
+//             return res.status(404).json({ message: "No canteens found for this college" });
+//         }
+        
+        
+//         return res.status(200).json({
+//             success: true,
+//             count: collegeCanteens.length,
+//             canteens: collegeCanteens
+//         });
+    
+//     } catch (error) {
+//         console.error("Error fetching college canteens:", error);
+//         res.status(500).json({ message: "Internal server error on fetching college canteens" });
+
+//     }
+// }

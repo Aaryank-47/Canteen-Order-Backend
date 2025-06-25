@@ -17,6 +17,7 @@ export const createFoodItem = async (req, res) => {
         const isActive = req.body.isActive === "true" || req.body.isActive === true;
 
         if (!foodName || !foodCategory || !foodPrice || !foodDescription || typeof isVeg !== "boolean" || typeof isActive !== "boolean") {
+            console.log("Missing required fields", { foodName, foodCategory, foodPrice, foodDescription, isVeg, isActive, foodImage, adminId });
             return res.status(400).json({ message: "Please fill all the fields" });
         }
 
@@ -32,6 +33,7 @@ export const createFoodItem = async (req, res) => {
         });
 
         if (existingFood) {
+            console.log("Food already exists:", existingFood);
             return res.status(400).json({ message: "Food Already Existed" });
         }
 
@@ -44,10 +46,18 @@ export const createFoodItem = async (req, res) => {
             foodCategory,
             foodDescription,
             isVeg,
-            isActive: true
+            isActive: true,
+            adminId
         })
+        
         await newFood.save();
-        res.status(201).json({ message: "Food CREATED SUCCESSFULLY", food: newFood });
+        console.log("New food item created:", newFood);
+        
+        res.status(201).json({ 
+            message: "Food CREATED SUCCESSFULLY", 
+            food: newFood 
+        });
+
     } catch (error) {
         console.error("Error creating food item:", error);
         res.status(500).json({
