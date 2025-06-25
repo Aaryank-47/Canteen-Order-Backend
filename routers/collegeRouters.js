@@ -1,6 +1,7 @@
 import express from 'express';
-import { registration, login, logout, getAllColleges, getsingleCollege, deleteCollege, addCollegeCanteens, getSelectedCanteens } from '../Controllers/collegeControls.js';
+import { registration, login, logout, getAllColleges, getsingleCollege, deleteCollege, addCollegeCanteens, getCollegeCanteens, removeCollegeCanteen } from '../Controllers/collegeControls.js';
 import { collegeMiddleware } from '../middleware/collegeMiddleware.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.route('/verify-college-token').get(collegeMiddleware, (req, res) => {
@@ -17,6 +18,8 @@ router.route('/all-colleges').get(getAllColleges);
 router.route('/single-college/:college_id').get(getsingleCollege);
 router.route('/delete-college/:college_id').delete(deleteCollege);
 router.route('/add-college-canteens/:collegeId').post(collegeMiddleware, addCollegeCanteens);
-router.route('/get-selected-canteens/:collegeId').get(collegeMiddleware, getSelectedCanteens);
+// router.route('/get-added-canteens/:collegeId').get(collegeMiddleware, getAddedCanteens);
+router.route('/get-college-canteens').get(authMiddleware, collegeMiddleware, getCollegeCanteens);
+router.route('/remove-college-canteen/:collegeId').delete(collegeMiddleware, removeCollegeCanteen);
 
 export default router;

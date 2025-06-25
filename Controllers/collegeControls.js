@@ -224,65 +224,133 @@ export const addCollegeCanteens = async (req, res) => {
 };
 
 
-export const getSelectedCanteens = async (req, res) => {
-    try {
-        const { collegeId } = req.params;
-
-        const college = await collegeModel.findById(collegeId).populate("canteens", "-adminPassword -__v");
-
-        if (!college) {
-            return res.status(404).json({
-                success: false,
-                message: "College not found"
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: "Selected canteens fetched successfully",
-            selectedCanteens: college.canteens
-        });
-    } catch (error) {
-        console.error("Error fetching selected canteens:", error);
-        return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
-    }
-};
-
-// export const getCollegeCanteens = async (req, res) => {
+// export const getAddedCanteens = async (req, res) => {
 //     try {
-//         const { college, role } = req.user;
-        
+//         const { collegeId } = req.params;
+
+//         const college = await collegeModel.findById(collegeId).populate("admins", "-adminPassword -__v");
+
 //         if (!college) {
-
-//             console.error("User college information not found");
-
-//             return res.status(400).json({
-//                 message: "User college information not found",
-//                 suggestion: "Complete your profile or contact support"
+//             return res.status(404).json({
+//                 success: false,
+//                 message: "College not found"
 //             });
 //         }
 
-        
-//         const collegeCanteens = await adminModel.find({
-//             collegeId: college._id,
-//             role: "admin"
-//         }).select("adminName");
-        
-        
-//         if (collegeCanteens.length === 0) {
-//             return res.status(404).json({ message: "No canteens found for this college" });
-//         }
-        
-        
+//         console.log("added canteens:", college.admins);
+
 //         return res.status(200).json({
 //             success: true,
-//             count: collegeCanteens.length,
-//             canteens: collegeCanteens
+//             message: "Selected canteens fetched successfully",
+//             selectedCanteens: college.admins
 //         });
-    
 //     } catch (error) {
-//         console.error("Error fetching college canteens:", error);
-//         res.status(500).json({ message: "Internal server error on fetching college canteens" });
-
+//         console.error("Error fetching selected canteens:", error);
+//         return res.status(500).json({ success: false, message: "Internal server error", error: error.message });
 //     }
-// }
+// };
+
+export const getCollegeCanteens = async (req, res) => {
+    try {
+        const { college: collegeName, role } = req.user;
+
+        if (!collegeName) {
+            console.error("User college information not found");
+
+            return res.status(400).json({
+                message: "User college information not found",
+                suggestion: "Complete your profile or contact support"
+            });
+        }
+
+        console.log("User college:", collegeName);
+        // console.log("college id:", college._id);
+
+        // get college_id by their college name
+        const collegeExists = await collegeModel.findOne({ collegeName });
+        console.log("collegeExists:", collegeExists);
+
+        if (!collegeExists) {
+            return res.status(404).json({ message: "College not found" });
+        }
+        console.log("collegeExists._id:", collegeExists._id);
+
+        // get college canteen through college id
+        const collegeCanteens = await collegeModel.findById(collegeExists._id)
+            .populate({
+                path: "canteens",
+                select: "adminName _id"
+            });
+
+
+        console.log("college id:", collegeExists._id);
+        console.log("collegeCanteens:", collegeCanteens);
+
+        // Transform the data to only include names and IDs
+        const canteenNames = collegeCanteens.canteens.map(canteen => ({
+            name: canteen.adminName,
+            id: canteen._id
+        }));
+
+        console.log("canteenNames:", canteenNames);
+
+        if (!collegeCanteens?.canteens?.length) {
+            console.error("No canteens found for this college");
+            return res.status(404).json({ message: "No canteens found for this college" });
+        }
+
+
+        return res.status(200).json({
+            success: true,
+            count: canteenNames.length,
+            canteens: canteenNames
+        });
+
+    } catch (error) {
+        console.error("Error fetching college canteens:", error);
+        res.status(500).json({ message: "Internal server error on fetching college canteens" });
+
+    }
+}
+
+export const removeCollegeCanteen = async (req, res) => {
+    try {
+        const {collegeId } = req.params;
+        const { canteenId } = req.body;
+
+        if( !collegeId || !canteenId) {
+            return res.status(400).json({ message: "Please provide collegeId and canteenId" });
+        }
+
+        const college = await collegeModel.findById(collegeId);
+        if(!college){
+            console.log(`That particular college with ${collegeId} doesn't exist`);
+        }
+
+        console.log("collegeId:", collegeId);
+        console.log("canteenId:", canteenId);
+
+        const canteenRemoval = await collegeModel.findByIdAndUpdate(
+            collegeId, 
+            { $pull: { canteens: canteenId } }, 
+            { new: true } 
+        );
+
+        if (!canteenRemoval) {
+            return res.status(404).json({ message: "Canteen not found in this college" });
+        }
+
+        console.log(`canteens that are removed from college ${college.collegeName}:`, canteenRemoval);
+
+        return res.status(200).json({ 
+            success: true,
+            message: `Canteen removed successfully from ${college.collegeName}`,
+            updatedCollege: canteenRemoval
+        });
+
+    } catch (error) {
+        console.error("Error removing college canteen:", error);
+        res.status(500).json({ message: "Internal server error on removing college canteen" });
+        
+    }
+}
