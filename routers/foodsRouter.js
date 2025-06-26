@@ -9,7 +9,6 @@ router.route("/update/:id").put(adminMiddleware,upload.single("foodImage"), upda
 router.route("/delete/:id").delete(adminMiddleware,deleteFoodItem);
 router.route("/top-selling-food").get(adminMiddleware,topSellingFood);
 router.route("/:id").get(adminMiddleware,getSingleFoodItem);
-
 router.route("/canteens-menu/:adminId").get(getFoodMenu);
 router.route("/").get(getAllFoodItems);
 
