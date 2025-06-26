@@ -193,6 +193,12 @@ export const addCollegeCanteens = async (req, res) => {
         const { adminIds } = req.body;
         const { collegeId } = req.params;
 
+        console.log("collegeId : ", collegeId);
+
+        if (!collegeId || collegeId === "null" || !mongoose.Types.ObjectId.isValid(collegeId)) {
+            return res.status(400).json({ message: "collegeId is missing or invalid" });
+        }
+
         if (!adminIds || !Array.isArray(adminIds) || adminIds.length === 0) {
             return res.status(400).json({ message: "Please provide adminId (canteen ID)" });
         }
@@ -291,9 +297,25 @@ export const addCollegeCanteens = async (req, res) => {
 
 export const getCollegeCanteens = async (req, res) => {
     try {
-        const { college: collegeName, role } = req.user;
+        const { collegeId } = req.params;
+        const { college: userCollege, role } = req.user || {};
 
-        if (!collegeName) {
+        let college;
+
+        if (collegeId) {
+            college = await collegeModel.findById(collegeId);
+        } else if (userCollege) {
+            college = await collegeModel.findOne({ collegeName: userCollege });
+        } else {
+            return res.status(400).json({
+                message: "College information missing",
+                suggestion: "Pass collegeId in params or ensure user is logged in with college"
+            })
+        }
+
+        console.log("User college:", college);
+        
+        if (!college) {
             console.error("User college information not found");
 
             return res.status(400).json({
@@ -302,27 +324,14 @@ export const getCollegeCanteens = async (req, res) => {
             });
         }
 
-        console.log("User college:", collegeName);
-        // console.log("college id:", college._id);
-
-        // get college_id by their college name
-        const collegeExists = await collegeModel.findOne({ collegeName });
-        console.log("collegeExists:", collegeExists);
-
-        if (!collegeExists) {
-            return res.status(404).json({ message: "College not found" });
-        }
-        console.log("collegeExists._id:", collegeExists._id);
-
-        // get college canteen through college id
-        const collegeCanteens = await collegeModel.findById(collegeExists._id)
+        const collegeCanteens = await collegeModel.findById(college._id)
             .populate({
                 path: "canteens",
                 select: "adminName _id"
             });
 
 
-        console.log("college id:", collegeExists._id);
+        console.log("college id:", college._id);
         console.log("collegeCanteens:", collegeCanteens);
 
         // Transform the data to only include names and IDs
@@ -378,7 +387,7 @@ export const removeCollegeCanteen = async (req, res) => {
         }
 
         const canteen = await adminModel.findById(adminId);
-        if(!canteen){
+        if (!canteen) {
             console.log('That particular canteen doesnot exist');
             return res.status(400).json({
                 message: `Canteen with ID ${adminId} not found`

@@ -28,7 +28,7 @@ const collegeScehma = new mongoose.Schema({
         type: String,
         required: true,
         unique: true,
-        match: /^[A-Z]{3}\d{3}$/,
+        match: /^[A-Z]{4}\d{3}$/,
         trim: true
     },
     collegeAddress: {
