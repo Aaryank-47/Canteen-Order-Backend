@@ -1,10 +1,10 @@
 import express from 'express';
 import { adminSignup, adminLogin, adminLogout, getAllAdmins } from '../Controllers/authAdminControl.js';
+import {getProfile, updateProfile, deleteProfile} from '../Controllers/adminProfile.js'
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
-import { get } from 'mongoose';
-
 
 const router = express.Router();
+
 
 router.route('/signup').post(adminSignup);
 router.route('/login').post(adminLogin);
@@ -17,5 +17,9 @@ router.route('/verify-token').get(adminMiddleware, (req, res) => {
     });
 })
 router.route('/get-all-admins').get(getAllAdmins);
+
+router.route('/profile').get(getProfile);
+router.route('/update-profile').put(updateProfile);
+router.route('/delete-profile').delete(deleteProfile);
 
 export default router;
