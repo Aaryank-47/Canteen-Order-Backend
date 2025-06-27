@@ -247,6 +247,9 @@ export const deleteFoodItem = async (req, res) => {
 
     }
 }
+
+// -------------- GET ALL FOOD ITEMS -------------------
+
 export const getAllFoodItems = async (req, res) => {
     try {
         const foods = await foodModel.find();
@@ -255,7 +258,7 @@ export const getAllFoodItems = async (req, res) => {
         }
 
         const foodMenu = foods.map((food) => {
-            const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg } = food;
+            const { foodName, foodPrice, foodImage, foodCategory, foodDescription, isVeg, isActive } = food;
             return {
                 _id: food._id,
                 foodName,
@@ -263,20 +266,29 @@ export const getAllFoodItems = async (req, res) => {
                 foodImage,
                 foodCategory,
                 foodDescription,
-                isVeg
+                isVeg,
+                isAvailable: isActive
             };
         });
 
         return res.status(200).json({
+            success: true,
             message: "Food menu fetched successfully",
             foodMenu: foodMenu
         });
 
     } catch (error) {
         console.error("Error fetching food menu:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({
+            success: false,
+            message: "Internal server error"
+        });
     }
 };
+
+
+// ------------------ GET FOOD MENU --------------------------
+
 
 export const getFoodMenu = async (req, res) => {
     try {
@@ -291,19 +303,64 @@ export const getFoodMenu = async (req, res) => {
 
         const foods = await foodModel.find({ adminId }).select('-__v -updatedBy -createdAt -updatedAt');
         if (foods.length === 0) {
-            return res.status(404).json({ message: "No food items found" });
+            return res.status(200).json({ 
+                message: "No food items found" 
+            });
         }
-        res.status(200).json({
+        return res.status(200).json({
             message: "All food items fetched successfully",
             foodslist: foods,
 
         });
     } catch (error) {
+
         console.error("Error fetching all food items:", error.message);
         res.status(500).json({ message: "Internal server error on fetching all food items" });
 
     }
 }
+
+// ------------------ TOGGLE ACTIVE STATE --------------------------
+
+export const toggleActiveVal = async (req, res) =>{
+    try {
+        const {id} = req.params;
+        const { isActive } = req.body;
+
+        if(!id){
+            console.log("Not getting adminId");
+        }
+        console.log(id);
+
+        const updateFood = await foodModel.findByIdAndUpdate(
+            id,
+            {isActive},
+            {new: true}
+        );
+
+        if(!updateFood){
+            console.log("Food item not found");
+        }
+        console.log(updateFood);
+
+        return res.status(200).json({
+            success: true,
+            message: "Availability status updated",
+            food: updateFood
+        })
+
+    } catch (error) {
+        console.log("Internal Server error in toggling the actrive state of food");
+        return res.status(400).json({
+            success: false,
+            message: "Internal Server error in toggling the actrive state of food"
+        })
+    }
+}
+
+
+// ------------------ GET SINGLE FOOD ITEM --------------------------
+
 
 export const getSingleFoodItem = async (req, res) => {
     try {
@@ -345,6 +402,9 @@ export const getSingleFoodItem = async (req, res) => {
 
     }
 }
+
+
+// ---------------------- GET TOP SELLING FOOD ------------------------
 
 
 export const topSellingFood = async (req, res) => {
@@ -472,6 +532,11 @@ export const topSellingFood = async (req, res) => {
 
 //     }
 // }
+
+
+
+
+
 
 export const getCanteenMenu = async (req, res) => {
     try {
