@@ -18,8 +18,8 @@ router.route('/verify-token').get(adminMiddleware, (req, res) => {
 })
 router.route('/get-all-admins').get(getAllAdmins);
 
-router.route('/profile').get(getProfile);
-router.route('/update-profile').put(updateProfile);
+router.route('/profile/:adminId').get(getProfile);
+router.route('/update-profile/:adminId').put(updateProfile);
 router.route('/delete-profile').delete(deleteProfile);
 
 export default router;

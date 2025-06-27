@@ -5,21 +5,31 @@ import adminModel from "../models/adminModel.js";
 export const getProfile = async (req, res) => {
     try {
         const { adminId } = req.params;
-        if (adminId) {
+        if (!adminId) {
             console.log("AdminId couldn't be fetched from frontend .");
             return res.status(404).json({
-                message: "Profile not found"
+                success: false,
+                message: "Admin ID is required"
             });
         }
         console.log("AdminId : ", adminId);
 
-        const { adminName, collegeName, adminEmail, phoneNumber } = profile;
-        const adminProfile = {
-            adminName,
-            adminEmail,
-            collegeName,
-            phoneNumber
+        const admin = await adminModel.findById(adminId);
+        if (!admin) {
+            return res.status(404).json({
+                success: false,
+                message: "Profile not found"
+            });
         }
+        console.log("admin : ", admin);
+
+        const adminProfile = {
+            adminName: admin.adminName,
+            adminEmail: admin.adminEmail,
+            collegeName: admin.collegeName,
+            phoneNumber: admin.phoneNumber
+        }
+        console.log("Admin Profile : ", adminProfile);
 
         res.status(200).json({
             success: true,
@@ -41,7 +51,10 @@ export const updateProfile = async (req, res) => {
         const { adminId } = req.params;
 
         if (!adminId) {
-            return res.status(404).json({ message: "Please provide adminId" });
+            return res.status(404).json({
+                success: false,
+                message: "Admin ID is required"
+            });
         }
         console.log("adminId : ", adminId);
 
@@ -113,4 +126,4 @@ export const deleteProfile = async (req, res) => {
         });
 
     }
-}
+}       
