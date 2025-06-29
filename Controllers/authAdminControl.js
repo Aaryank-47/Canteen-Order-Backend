@@ -33,6 +33,7 @@ export const adminSignup = async (req, res) => {
         try {
             const adminCreated = await AdminModel.create({
                 adminName,
+                collegeName: college.collegeName,
                 collegeId: college._id,
                 phoneNumber,
                 adminEmail,

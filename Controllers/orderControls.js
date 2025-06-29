@@ -1,9 +1,7 @@
 import orderModel from "../models/orderModel.js";
 import foodModel from "../models/foodModel.js";
 import adminModel from "../models/adminModel.js";
-import mongoose from 'mongoose';
 import { calculateTotalPrice } from "../utils/calculateTotalprice.js";
-
 
 
 export const placeOrder = async (req, res) => {
@@ -15,7 +13,6 @@ export const placeOrder = async (req, res) => {
         return res.status(400).json({ message: "Please provide userId and foodItems" });
     }
 
-    // let totalPrice = 0;
     try {
         const canteen = await adminModel.findById(adminId);
         if (!canteen) {
@@ -44,25 +41,14 @@ export const placeOrder = async (req, res) => {
             isActive: true
         });
 
-        // Add this debug code right before your query:
         console.log("Searching for foods with:", {
             ids: foodIds,
             adminId: adminId,
             isActive: true
         });
 
-        console.log("Valid food items found:", validItems);
-
-        // Check if IDs are valid MongoDB IDs
-        // console.log("Are IDs valid?", {
-        //     id1: mongoose.Types.ObjectId.isValid(foodIds[0]),
-        //     id2: mongoose.Types.ObjectId.isValid(foodIds[1])
-        // });
-
-
         console.log("Valid food items found:", validItems.length);
         console.log("Total food items count:", foodItems.length);
-
 
         if (validItems.length !== foodItems.length) {
             return res.status(400).json({
@@ -77,34 +63,32 @@ export const placeOrder = async (req, res) => {
             return acc;
         }, {});
 
-        // 2. Calculate total price
         const totalPrice = foodItems.reduce((total, item) => {
-            const itemPrice = foodPriceMap[item.foodId] || 0; // Fallback to 0 if not found
-            const quantity = item.foodQuantity || 1; // Default to 1 if not specified
+            const itemPrice = foodPriceMap[item.foodId] || 0;
+            const quantity = item.foodQuantity || 1;
             return total + (itemPrice * quantity);
         }, 0);
 
         console.log("Total price calculated:", totalPrice);
-        
-        // 5. Create order
-        const order = new orderModel({
+
+        const order = await orderModel.create({
             orderNumber,
-            user: userId,
-            canteen: adminId,
-            items: foodItems.map(item => ({
-                food: item.foodId,
-                quantity: item.foodQuantity || 1,
-                price: foodPriceMap[item.foodId]
+            userId,
+            adminId,
+            foodItems: foodItems.map(item => ({
+                foodId: item.foodId,
+                foodQuantity: item.foodQuantity || 1
             })),
             totalPrice,
-            status: 'Pending',
-            orderDate: today
+            status: 'Pending'
         });
 
-        // 6. Update counters
+        console.log("Order saved in DB:", order);
+
+        // Update canteen counters
         canteen.dailyOrderCounter += 1;
         canteen.lastOrderDate = today;
-        await Promise.all([canteen.save(), order.save()])
+        await canteen.save();
 
         res.status(201).json({
             success: true,
@@ -112,34 +96,36 @@ export const placeOrder = async (req, res) => {
             totalPrice,
             message: `Order #${orderNumber} placed successfully`,
             orderDetails: {
-                items: order.items,
+                items: order.foodItems,
                 status: order.status,
-                orderDate: order.orderDate
+                createdAt: order.createdAt
             }
         });
 
-
     } catch (error) {
-        console.log(error);
+        console.log("Error placing order:", error);
         res.status(500).json({ message: "Internal server error" });
-
     }
-}
+};
+
 
 // controllers/orderController.js
 export const getCanteenOrders = async (req, res) => {
     try {
-        const { _id: requestingAdminId, role } = req.admin;
+        const { _id, role } = req.admin;
         const { adminId: targetCanteenId } = req.params;
         const { status, date } = req.query;
 
+        
         // 1. Authorization - Verify requesting admin owns this canteen
-        if (role !== "admin" || !targetCanteenId.equals(requestingAdminId)) {
+        if (role !== "admin" ) {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized access to orders"
             });
         }
+        console.log("_id : ", _id );
+        console.log("targetCanteenId || adminId : ",targetCanteenId)
 
         // 2. Build base query
         const query = {
@@ -166,10 +152,11 @@ export const getCanteenOrders = async (req, res) => {
 
         // 4. Fetch orders with populated user details
         const orders = await orderModel.find(query)
-            .populate('user', 'name phone email')
+            .populate('user', 'name contact email')
             .populate('items.food', 'foodName foodPrice')
             .sort({ createdAt: -1 });
 
+        console.log("orders : ", orders);
         // 5. Format response
         res.status(200).json({
             success: true,
@@ -477,11 +464,15 @@ export const orderUpdatesByUser = async (req, res) => {
 
 export const orderHistory = async (req, res) => {
     const { userId } = req.params;
+    if (!userId) {
+        console.log("CouldNot get userId for order History");
+    }
+    console.log(`userId fetch for order history : ${userId}`)
 
     // ✅ Check for valid ObjectId early
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-        return res.status(400).json({ message: "Invalid user ID" });
-    }
+    // if (!mongoose.Types.ObjectId.isValid(userId)) {
+    //     return res.status(400).json({ message: "Invalid user ID" });
+    // }
 
     try {
         // ✅ Fetch and populate food item details inside each order
@@ -536,16 +527,52 @@ export const getAllOrders = async (req, res) => {
                 $gte: today,
                 $lt: tomorrow
             }
-        }).sort({ createdAt: -1 });
+        })
+        .populate({
+            path: 'userId',
+            select: 'name email contact' // Only include these fields from user
+        })
+        .populate({
+            path: 'foodItems.foodId',
+            select: 'foodName foodPrice' // Include these fields from food
+        })
+        .sort({ createdAt: -1 });
+
+        // Format the response with detailed information
+        const formattedOrders = orders.map(order => ({
+            _id: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            totalPrice: order.totalPrice,
+            createdAt: order.createdAt,
+            userInfo: {
+                name: order.userId?.name,
+                email: order.userId?.email,
+                contact: order.userId?.contact
+            },
+            items: order.foodItems.map(item => ({
+                foodId: item.foodId?._id,
+                foodName: item.foodId?.foodName,
+                foodPrice: item.foodId?.foodPrice,
+                quantity: item.foodQuantity,
+                itemTotal: (item.foodId?.foodPrice || 0) * (item.foodQuantity || 1)
+            }))
+        }));
 
         return res.status(200).json({
+            success: true,
             message: orders.length ? "Orders fetched successfully" : "No orders found today",
-            orders: orders
+            count: orders.length,
+            orders: formattedOrders
         });
 
     } catch (error) {
         console.error("Error in getAllOrders:", error);
-        res.status(500).json({ message: "Internal server error" });
+        res.status(500).json({ 
+            success: false,
+            message: "Internal server error",
+            error: error.message 
+        });
     }
 };
 
