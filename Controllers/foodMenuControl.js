@@ -418,13 +418,15 @@ export const topSellingFood = async (req, res) => {
 
         const foodCountMap = {};
         const orders = await orderModel.find({
-            canteen: adminId,
+            adminId: adminId,
             status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"],
         });
 
+        console.log("Orders : ",orders)
+
         console.log("Orders fetched for top selling food:", orders.length);
 
-        const fo = orders.forEach((order) => {
+        orders.forEach((order) => {
             order.foodItems.forEach((item) => {
                 const foodId = item.foodId.toString();
                 const quantity = item.foodQuantity || 1;
@@ -433,7 +435,6 @@ export const topSellingFood = async (req, res) => {
         });
 
         console.log("Food count map:", foodCountMap);
-        console.log("FO : ", fo)
 
         const sortedFoodIds = Object.entries(foodCountMap)
             .map(([foodId, quantity]) => ({ foodId, quantity }))

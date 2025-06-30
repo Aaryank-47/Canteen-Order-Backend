@@ -116,16 +116,16 @@ export const getCanteenOrders = async (req, res) => {
         const { adminId: targetCanteenId } = req.params;
         const { status, date } = req.query;
 
-        
+
         // 1. Authorization - Verify requesting admin owns this canteen
-        if (role !== "admin" ) {
+        if (role !== "admin") {
             return res.status(403).json({
                 success: false,
                 message: "Unauthorized access to orders"
             });
         }
-        console.log("_id : ", _id );
-        console.log("targetCanteenId || adminId : ",targetCanteenId)
+        console.log("_id : ", _id);
+        console.log("targetCanteenId || adminId : ", targetCanteenId)
 
         // 2. Build base query
         const query = {
@@ -528,15 +528,15 @@ export const getAllOrders = async (req, res) => {
                 $lt: tomorrow
             }
         })
-        .populate({
-            path: 'userId',
-            select: 'name email contact' // Only include these fields from user
-        })
-        .populate({
-            path: 'foodItems.foodId',
-            select: 'foodName foodPrice' // Include these fields from food
-        })
-        .sort({ createdAt: -1 });
+            .populate({
+                path: 'userId',
+                select: 'name email contact' // Only include these fields from user
+            })
+            .populate({
+                path: 'foodItems.foodId',
+                select: 'foodName foodPrice' // Include these fields from food
+            })
+            .sort({ createdAt: -1 });
 
         // Format the response with detailed information
         const formattedOrders = orders.map(order => ({
@@ -568,23 +568,33 @@ export const getAllOrders = async (req, res) => {
 
     } catch (error) {
         console.error("Error in getAllOrders:", error);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             message: "Internal server error",
-            error: error.message 
+            error: error.message
         });
     }
 };
 
 export const todaysOrdersCounts = async (req, res) => {
     try {
+
+        const  adminId  = req.admin._id;
+        if (!adminId) {
+            console.log("Didn't get adminID : ", adminId);
+        }
+        console.log("ADMINid via todaysOrdersCounts() : ", adminId);
+
         const start = new Date();
         start.setHours(0, 0, 0, 0);
 
         const end = new Date();
         end.setHours(23, 59, 59, 999);
 
-        const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end } });
+        const orders = await orderModel.find({
+            adminId: adminId,
+            createdAt: { $gte: start, $lte: end }
+        });
         const orderCounts = orders ? orders.length : 0; // Handle case where orders might be null, although find should return empty array
 
         console.log(`Today's orders count: ${orderCounts}`);
@@ -622,13 +632,24 @@ export const todaysOrdersCounts = async (req, res) => {
 
 export const getTodaysRevenue = async (req, res) => {
     try {
+
+        const  adminId = req.admin._id;
+        if (!adminId) {
+            console.log("Didn't get adminID via getTodaysRevenue(): ", adminId);
+        }
+        console.log("ADMINid via getTodaysRevenue() : ", adminId);
+
         const start = new Date();
         start.setHours(0, 0, 0, 0);
 
         const end = new Date();
         end.setHours(23, 59, 59, 999);
 
-        const orders = await orderModel.find({ createdAt: { $gte: start, $lte: end }, status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
+        const orders = await orderModel.find({
+            adminId: adminId,
+            createdAt: { $gte: start, $lte: end },
+            status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"]
+        });
 
         // if (!orders || orders.length === 0) {
         //     return res.status(404).json({ 
@@ -666,8 +687,17 @@ export const getTodaysRevenue = async (req, res) => {
 }
 
 export const getOrdersPerDay = async (req, res) => {
+
+    const adminId  = req.admin._id;
+    if (!adminId) {
+        console.log("Didn't get adminID via getOrdersPerDay() : ", adminId);
+    }
+    console.log("ADMINid via getOrdersPerDay() : ", adminId);
     try {
-        const order = await orderModel.find({ status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] });
+        const order = await orderModel.find({
+            adminId: adminId,
+            status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"]
+        });
 
         if (!order || order.length === 0) {
             return res.status(404).json({ message: "No orders found" });
@@ -705,6 +735,14 @@ export const getOrdersPerDay = async (req, res) => {
 
 export const getPeakOrderHours = async (req, res) => {
     try {
+
+        const adminId  = req.admin._id;
+        if (!adminId) {
+            console.log("Didn't get adminID via getPeakOrderHours() : ", adminId);
+        }
+        console.log("ADMINid via getPeakOrderHours() : ", adminId);
+
+
         const now = new Date();
         const yesterday = new Date(now);
         yesterday.setDate(now.getDate() - 1);
@@ -714,6 +752,7 @@ export const getPeakOrderHours = async (req, res) => {
 
         // Step 2: Filter orders of yesterday only
         const orders = await orderModel.find({
+            adminId: adminId,
             status: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"],
             createdAt: { $gte: yesterday, $lte: endOfYesterday }
         });
