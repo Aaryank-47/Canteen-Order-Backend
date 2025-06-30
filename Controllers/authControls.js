@@ -229,25 +229,41 @@ export const googleLogin = async (req, res) => {
     try {
         const { idToken } = req.body;
 
+        console.log("idToken : ", idToken);
+
         const ticket = await client.verifyIdToken({    // Verify the ID token providede by google wiht client id
             idToken,
             audience: process.env.GOOGLE_CLIENT_ID
         });
 
+        console.log("ticket : ", ticket);
+
         const payload = ticket.getPayload();
+
+        console.log(" Getting Payload : ", payload)
+
         const { name, contact, email, college } = payload;
+
+
         const userFind = await userModel.findOne({ email });
+
+
+
+        console.log("user Found :  ", userFind);
+
         if (!userFind) {
-            const salt = await bcrypt.genSalt(10);
-            const hashedPassword = await bcrypt.hash(password, salt);
+            // const salt = await bcrypt.genSalt(10);
+            // const hashedPassword = await bcrypt.hash(password, salt);
 
             const CreateUser = await userModel.create({
                 name,
                 college,
                 contact,
                 email,
-                password: hashedPassword
+                // password: hashedPassword
             });
+
+            console.log("CreateUser :  ", CreateUser)
 
             if (!CreateUser) {
                 res.status(404).json({
@@ -271,6 +287,23 @@ export const googleLogin = async (req, res) => {
                 userToken: userToken
             });
             console.log(userToken)
+        } else {
+            const userToken = await generateToken(userFind._id);
+            return res.cookie("userToken", userToken, {
+                httpOnly: true,
+                expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+                secure: false,
+                sameSite: "none"
+            }).status(200).json({
+                message: "Google login successful (existing user)",
+                userId: userFind._id.toString(),
+                user: {
+                    name: userFind.name,
+                    email: userFind.email,
+                    contact: userFind.contact
+                },
+                userToken
+            });
         }
 
 
@@ -288,7 +321,7 @@ export const getUser = async (req, res) => {
         const user = await userModel.findById(req.user._id).select("-password -otp -expiresIn");
         console.log("User ID:", req.user._id);
         console.log("User fetched:", user);
-        
+
         if (!user) {
             console.log("User not found");
             return res.status(404).json({ message: "User not found" });
