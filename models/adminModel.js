@@ -4,7 +4,6 @@ const adminSchema = new mongoose.Schema({
     collegeId: {
         type: mongoose.SchemaTypes.ObjectId,
         ref: 'College',
-        unique: true,
         trim: true
     },
     collegeName: {
@@ -65,7 +64,7 @@ const adminSchema = new mongoose.Schema({
     },
     lastOrderDate: {
         type: Date,
-        default: new Date(0) // Initialize to epoch
+        default: new Date(0) 
     }
 
 });
