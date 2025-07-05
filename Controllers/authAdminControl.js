@@ -45,7 +45,8 @@ export const adminSignup = async (req, res) => {
             res.cookie("adminToken", adminToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                secure: false,
+                // secure: false,
+                secure: true,
                 sameSite: "lax"
             }).status(201).json({
                 message: "Admin created successfully",
@@ -99,7 +100,8 @@ export const adminLogin = async (req, res) => {
             res.cookie("adminToken", adminToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                secure: false,
+                secure: true,
+                // secure: false,
                 sameSite: "lax"
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
@@ -171,7 +173,8 @@ export const adminGoogleAuthLogin = async (req, res) => {
         res.cookie("token", token, {
             httOnly: true,
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            secure: false,
+            secure: true,
+            // secure: false,
             sameSite: "none"
         }).status(200).json({
             message: "Admin login successfully",

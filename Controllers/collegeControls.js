@@ -42,7 +42,8 @@ export const registration = async (req, res) => {
             res.cookie("collegeToken", collegeToken, {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
-                secure: false,
+                // secure: false,
+                secure: true,
                 sameSite: "lax"
             }).status(201).json({
                 message: "College created successfully",
@@ -89,7 +90,8 @@ export const login = async (req, res) => {
             res.cookie("collegeToken", collegeToken, {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
-                secure: false,
+                // secure: false,
+                secure: true,
                 sameSite: "lax"
             }).status(200).json({
                 message: "Login successful",

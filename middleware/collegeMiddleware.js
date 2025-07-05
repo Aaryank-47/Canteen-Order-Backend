@@ -7,7 +7,7 @@ dotenv.config();
 export const collegeMiddleware = async (req, res, next) => {
     try {
 
-        const headerToken = req.headers.authorization?.split("")[1];
+        const headerToken = req.headers.authorization?.split(" ")[1];
         const token = req.cookies.collegeToken || headerToken;
         if (!token || token === "null") {
             return res.status(401).json({
