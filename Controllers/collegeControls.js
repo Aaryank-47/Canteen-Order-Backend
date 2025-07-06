@@ -95,7 +95,11 @@ export const login = async (req, res) => {
                 sameSite: "lax"
             }).status(200).json({
                 message: "Login successful",
-                collegeId: collegeExists._id.toString(),
+                college: {
+                    collegeId: collegeExists._id.toString(),
+                    collegeName: collegeExists.collegeName,
+                    collegeEmail: collegeExists.collegeEmail
+                },
                 collegeToken: collegeToken
             })
 
@@ -316,7 +320,7 @@ export const getCollegeCanteens = async (req, res) => {
         }
 
         console.log("User college:", college);
-        
+
         if (!college) {
             console.error("User college information not found");
 
