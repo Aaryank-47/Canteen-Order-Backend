@@ -131,12 +131,12 @@ export const adminLogout = async (req, res) => {
     try {
         // const email = req.body.adminEmail;
 
-        return res.cookie("token", null, {
+        return res.cookie("adminToken", null, {
             httpOnly: true,
             expires: new Date(Date.now()),
             secure: false,
             sameSite: "none"
-        }).status(200).json({ message: `Admin  Logout Successfully` })
+        }).status(200).json({ message: `Admin  Logout Successfully` , adminToken: null })
         // }).status(200).json({message:`Admin with ${email} Logout Successfully`})
     } catch (error) {
         return res.status(500).json({ message: "Admin Interal Server Error 3", error });

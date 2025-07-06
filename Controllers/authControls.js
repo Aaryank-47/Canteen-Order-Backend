@@ -143,6 +143,7 @@ export const logout = async (req, res) => {
         //     secure: false,
         //     sameSite: "none"
         // }).status(200).json({message:"logged out null successfully", token: null})
+        console.log(" req.cookies.userToken : ",  req.cookies.userToken)
         res.clearCookie("userToken");
         res.status(200).json({ message: "logged out clear successfully", userToken: null });
     }

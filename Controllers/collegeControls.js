@@ -119,14 +119,17 @@ export const login = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
-    try {
-
-        res.clearCookie("collegeToken", {
+    try {        
+        res.cookie("collegeToken", null,{
             httpOnly: true,
             expires: new Date(Date.now()),
             secure: false,
-            sameSite: "none"
-        }).status(200).json({ message: "Logged out successfully" });
+            sameSite: "lax"
+        }).status(200).json({ 
+            message: "Logged out successfully",
+            collegeToken: null
+        });
+        console.log("Cookie has been cleared successfully");
 
     } catch (error) {
         res.status(500).json({ "internal server error on logout of the college": error });
