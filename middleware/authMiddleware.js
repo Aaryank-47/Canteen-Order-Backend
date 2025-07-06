@@ -6,7 +6,10 @@ dotenv.config();
 
 export const authMiddleware = async (req, res, next) => {
     try {
+        
         const headerToken = req.headers.authorization?.split(" ")[1];
+        console.log("headerToken via middleware : ", headerToken);
+
         const token = req.cookies.userToken || headerToken;
         console.log("userToken via authMiddleware : ", token);
 
