@@ -43,7 +43,7 @@ export const registration = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
                 // secure: false,
-                secure: true,
+                secure: process.env.NODE_ENV === "production",
                 sameSite: "lax"
             }).status(201).json({
                 message: "College created successfully",
@@ -91,7 +91,7 @@ export const login = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
                 // secure: false,
-                secure: true,
+                secure: process.env.NODE_ENV === "production",
                 sameSite: "lax"
             }).status(200).json({
                 message: "Login successful",
@@ -119,13 +119,13 @@ export const login = async (req, res) => {
 }
 
 export const logout = async (req, res) => {
-    try {        
-        res.cookie("collegeToken", null,{
+    try {
+        res.cookie("collegeToken", null, {
             httpOnly: true,
             expires: new Date(Date.now()),
-            secure: false,
+            secure: process.env.NODE_ENV === "production",
             sameSite: "lax"
-        }).status(200).json({ 
+        }).status(200).json({
             message: "Logged out successfully",
             collegeToken: null
         });
