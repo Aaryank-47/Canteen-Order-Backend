@@ -6,8 +6,9 @@ dotenv.config();
 
 export const adminMiddleware = async (req, res, next) => {
     try {
-        const token = req.cookies.adminToken;
+        const token = req.cookies.adminToken || req.cookies.adminToken || req.headers.authorization?.split(' ')[1];;
         console.log("token in middleware : ",token)
+        
         if (!token) {
             return res.status(401).json({
                 success: false,
