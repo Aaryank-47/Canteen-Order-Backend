@@ -6,11 +6,12 @@ dotenv.config();
 
 export const adminMiddleware = async (req, res, next) => {
     try {
-        const headerToken = req.headers.authorization?.split(' ')[1];
-        console.log("headerToken via adminMiddeware : ", headerToken)
+        // const headerToken = req.headers.authorization?.split(' ')[1];
+        // console.log("headerToken via adminMiddeware : ", headerToken)
         
-        const token = req.cookies.adminToken || headerToken;
-        console.log("token in middleware : ",token)
+        // const token = req.cookies.adminToken || headerToken;
+        const token = req.cookies.adminToken ;
+        console.log("cookiesssssssss ....................... token in middleware : ",token)
         
         if (!token) {
             return res.status(401).json({

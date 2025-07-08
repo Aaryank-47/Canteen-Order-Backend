@@ -7,11 +7,12 @@ dotenv.config();
 export const collegeMiddleware = async (req, res, next) => {
     try {
 
-        const headerToken = req.headers.authorization?.split(" ")[1];
-        console.log("headerToken via middleware: ",headerToken);
+        // const headerToken = req.headers.authorization?.split(" ")[1];
+        // console.log("headerToken via middleware: ",headerToken);
 
-        const token = req.cookies.collegeToken || headerToken;
-        console.log("token via middleware : ",token);
+        const token = req.cookies.collegeToken;
+        console.log("college cookies ---------or--------token via middleware : ",token);
+        
         if (!token || token === "null") {
             return res.status(401).json({
                 success: false,

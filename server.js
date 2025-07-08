@@ -16,11 +16,14 @@ const app = express();
 const corsOptions = {
   origin: [process.env.URL1, process.env.URL2],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  // allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
   optionsSuccessStatus: 204,
   exposedHeaders: ['set-cookie']
 };
+
+console.log("Allowed origins:", process.env.URL1, process.env.URL2);
+
 
 //MIDDLEWARES
 app.use(cors(corsOptions));
