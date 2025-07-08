@@ -43,13 +43,11 @@ export const adminSignup = async (req, res) => {
 
             const adminToken = await generateAdminToken(adminCreated);
             res.cookie("adminToken", adminToken, {
-                httpOnly: true,
+                
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                // secure: false,
-                // // secure: true,
-                // sameSite: "lax"
-                   secure: false,
-                  sameSite: "Lax"
+                  httpOnly: true,
+      sameSite: 'None',
+      secure: true,
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
@@ -100,13 +98,11 @@ export const adminLogin = async (req, res) => {
             }
 
             res.cookie("adminToken", adminToken, {
-                httpOnly: true,
+             
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                 secure: true,
-                // secure: false,
-                // sameSite: "None"
-                secure: false,
-                sameSite: "Lax"
+                  httpOnly: true,
+      sameSite: 'None',
+      secure: true,
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
@@ -175,11 +171,11 @@ export const adminGoogleAuthLogin = async (req, res) => {
 
         const token = await generateToken(googleAdmin);
         res.cookie("token", token, {
-            httOnly: true,
+           
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-            //secure: true,
-             secure: false,
-            sameSite: "lax"
+              httpOnly: true,
+      sameSite: 'None',
+      secure: true,
         }).status(200).json({
             message: "Admin login successfully",
             adminId: googleAdmin._id.toString(),
