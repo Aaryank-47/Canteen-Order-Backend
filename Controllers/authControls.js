@@ -40,8 +40,8 @@ export const signup = async (req, res) => {
             res.cookie("userToken", userToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                secure: true,
-                // secure: false,
+                // secure: true,
+                secure: false,
                 sameSite: "None"
             }).status(201).json({
                 message: "user created successfully",
@@ -103,8 +103,8 @@ export const login = async (req, res) => {
             res.cookie("userToken", userToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                secure: true,
-                // secure: false,
+                // secure: true,
+                secure: false,
                 sameSite: "None"
             }).status(200).json({
                 message: "login successfully",
@@ -211,7 +211,8 @@ export const resetPassword = async (req, res) => {
 
         res.clearCookie("userToken", null, {
             httpOnly: true,
-            secure: true,
+            // secure: true,
+            secure: false,
             sameSite: "None"
         });
 
@@ -277,8 +278,8 @@ export const googleLogin = async (req, res) => {
             res.cookie("userToken", userToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                // secure: false,
-                secure: true,
+                secure: false,
+                // secure: true,
                 sameSite: "none"
             }).status(200).json({
                 message: "Google login successfully",
