@@ -100,9 +100,9 @@ export const adminLogin = async (req, res) => {
             res.cookie("adminToken", adminToken, {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                // secure: true,
+                 secure: true,
                 secure: false,
-                sameSite: "lax"
+                sameSite: "None"
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
