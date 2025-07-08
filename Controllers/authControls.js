@@ -42,7 +42,7 @@ export const signup = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: true,
                 // secure: false,
-                sameSite: "lax"
+                sameSite: "None"
             }).status(201).json({
                 message: "user created successfully",
                 userId: userCreated._id.toString(),
@@ -105,7 +105,7 @@ export const login = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: true,
                 // secure: false,
-                sameSite: "lax"
+                sameSite: "None"
             }).status(200).json({
                 message: "login successfully",
                 userId: userExists._id.toString(),
