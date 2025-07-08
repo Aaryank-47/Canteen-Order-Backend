@@ -101,7 +101,7 @@ export const adminLogin = async (req, res) => {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                  secure: true,
-                secure: false,
+                // secure: false,
                 sameSite: "None"
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
