@@ -47,7 +47,7 @@ export const adminSignup = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
                 // secure: true,
-                sameSite: "None"
+                sameSite: "lax"
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
@@ -102,7 +102,7 @@ export const adminLogin = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 // secure: true,
                 secure: false,
-                sameSite: "None"
+                sameSite: "lax"
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
@@ -135,7 +135,7 @@ export const adminLogout = async (req, res) => {
             httpOnly: true,
             expires: new Date(Date.now()),
             secure: false,
-            sameSite: "none"
+            sameSite: "lax"
         }).status(200).json({ message: `Admin  Logout Successfully` , adminToken: null })
         // }).status(200).json({message:`Admin with ${email} Logout Successfully`})
     } catch (error) {
@@ -175,7 +175,7 @@ export const adminGoogleAuthLogin = async (req, res) => {
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
             secure: true,
             // secure: false,
-            sameSite: "None"
+            sameSite: "lax"
         }).status(200).json({
             message: "Admin login successfully",
             adminId: googleAdmin._id.toString(),

@@ -42,7 +42,7 @@ export const signup = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 // secure: true,
                 secure: false,
-                sameSite: "None"
+                sameSite: "lax"
             }).status(201).json({
                 message: "user created successfully",
                 userId: userCreated._id.toString(),
@@ -105,7 +105,7 @@ export const login = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 // secure: true,
                 secure: false,
-                sameSite: "None"
+                sameSite: "lax"
             }).status(200).json({
                 message: "login successfully",
                 userId: userExists._id.toString(),
@@ -141,7 +141,7 @@ export const logout = async (req, res) => {
         //     httpOnly: true,
         //     expires: new Date(Date.now()),
         //     secure: false,
-        //     sameSite: "none"
+        //     sameSite: "lax"
         // }).status(200).json({message:"logged out null successfully", token: null})
         console.log(" req.cookies.userToken : ",  req.cookies.userToken)
         res.clearCookie("userToken");
@@ -213,7 +213,7 @@ export const resetPassword = async (req, res) => {
             httpOnly: true,
             // secure: true,
             secure: false,
-            sameSite: "None"
+            sameSite: "lax"
         });
 
         return res.status(200).json({
@@ -280,7 +280,8 @@ export const googleLogin = async (req, res) => {
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
                 // secure: true,
-                sameSite: "none"
+                // sameSite: "lax"
+                sameSite: "lax"
             }).status(200).json({
                 message: "Google login successfully",
                 userId: CreateUser._id.toString(),
@@ -298,7 +299,7 @@ export const googleLogin = async (req, res) => {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                sameSite: "none"
+                sameSite: "lax"
             }).status(200).json({
                 message: "Google login successful (existing user)",
                 userId: userFind._id.toString(),
