@@ -10,7 +10,7 @@ export const collegeMiddleware = async (req, res, next) => {
         const headerToken = req.headers.authorization?.split(" ")[1];
         console.log("headerToken via middleware: ",headerToken);
 
-        const token = req.cookies.collegeToken;
+        const token = req.cookies.collegeToken || headerToken;
         console.log("college cookies ---------or--------token via middleware : ",token);
         
         if (!token || token === "null") {
