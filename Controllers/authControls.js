@@ -231,12 +231,12 @@ export const resetPassword = async (req, res) => {
 export const googleLogin = async (req, res) => {
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     try {
-        const { idToken } = req.body;
+        const { userToken } = req.body;
 
-        console.log("idToken : ", idToken);
+        console.log("userToken : ", userToken);
 
         const ticket = await client.verifyIdToken({    // Verify the ID token providede by google wiht client id
-            idToken,
+            idToken : userToken,
             audience: process.env.GOOGLE_CLIENT_ID
         });
 

@@ -148,10 +148,10 @@ export const adminLogout = async (req, res) => {
 export const adminGoogleAuthLogin = async (req, res) => {
     const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
     try {
-        const { userToken } = req.body;
+        const { idToken } = req.body;
 
         const ticket = await client.verifyIdToken({
-            userToken,
+            idToken,
             audience: process.env.GOOGLE_CLIENT_ID,
         });
 
