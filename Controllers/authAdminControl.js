@@ -87,7 +87,7 @@ export const adminLogin = async (req, res) => {
         const isMatch = await bcrypt.compare(adminPassword, adminExists.adminPassword);
         if (!isMatch) {
             return res.status(400).json({ message: "Wrong password man!!!", error: error.message || error });
-        }
+        }   
 
         try {
             const adminToken = await generateAdminToken(adminExists);
