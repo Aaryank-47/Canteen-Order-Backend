@@ -378,6 +378,7 @@ export const getCanteenOrders = async (req, res) => {
 
 
 export const orderUpdatesByAdmin = async (req, res) => {
+    
     const { orderId, status } = req.params;
     if (!orderId || !status) {
         return res.status(400).json({ message: "Please provide orderId and status in URL" });

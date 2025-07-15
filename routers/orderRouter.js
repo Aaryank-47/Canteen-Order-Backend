@@ -8,8 +8,10 @@ const router = express.Router();
 router.route('/admins/:adminId/place-order').post(authMiddleware,placeOrder);
 // router.route('/place-order').post(authMiddleware,placeOrder);
 router.route('/order-history/:userId').get(orderHistory);
+
 router.route('/admin-order-update/:orderId/:status').put(adminMiddleware,orderUpdatesByAdmin);
 router.route('/user-order-cancel/:orderId').put(authMiddleware,orderUpdatesByUser);
+
 router.route('/get-all-orders/:adminId').get(adminMiddleware,getAllOrders);
 router.route('/todays-total-orders').get(adminMiddleware,todaysOrdersCounts);
 router.route('/todays-revenue').get(adminMiddleware,getTodaysRevenue);
