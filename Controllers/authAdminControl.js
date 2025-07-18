@@ -17,16 +17,16 @@ export const adminSignup = async (req, res) => {
             return res.status(400).json({ message: "Please fill all fields" });
         }
 
-        const college = await collegeModel.findOne({ collegeName : collegeName.trim() });
+        const college = await collegeModel.findOne({ collegeName: collegeName.trim() });
         if (!college) {
             return res.status(400).json({ message: "College does not exist" });
         }
-        
+
         const adminExists = await AdminModel.findOne({ adminEmail });
         if (adminExists) {
             return res.status(400).json({ message: "Admin already exists" });
         }
-        
+
         const salt = await bcrypt.genSalt(10);
         const hashPassword = await bcrypt.hash(adminPassword, salt);
 
@@ -43,11 +43,11 @@ export const adminSignup = async (req, res) => {
 
             const adminToken = await generateAdminToken(adminCreated);
             res.cookie("adminToken", adminToken, {
-                
+
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                  httpOnly: true,
-      sameSite: 'None',
-      secure: true,
+                httpOnly: true,
+                sameSite: 'None',
+                secure: true,
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
@@ -87,7 +87,7 @@ export const adminLogin = async (req, res) => {
         const isMatch = await bcrypt.compare(adminPassword, adminExists.adminPassword);
         if (!isMatch) {
             return res.status(400).json({ message: "Wrong password man!!!", error: error.message || error });
-        }   
+        }
 
         try {
             const adminToken = await generateAdminToken(adminExists);
@@ -98,11 +98,11 @@ export const adminLogin = async (req, res) => {
             }
 
             res.cookie("adminToken", adminToken, {
-             
+
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-                  httpOnly: true,
-      sameSite: 'None',
-      secure: true,
+                httpOnly: true,
+                sameSite: 'Lax',
+                secure: false,
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
@@ -136,7 +136,7 @@ export const adminLogout = async (req, res) => {
             expires: new Date(Date.now()),
             secure: false,
             sameSite: "lax"
-        }).status(200).json({ message: `Admin  Logout Successfully` , adminToken: null })
+        }).status(200).json({ message: `Admin  Logout Successfully`, adminToken: null })
         // }).status(200).json({message:`Admin with ${email} Logout Successfully`})
     } catch (error) {
         return res.status(500).json({ message: "Admin Interal Server Error 3", error });
@@ -171,11 +171,11 @@ export const adminGoogleAuthLogin = async (req, res) => {
 
         const token = await generateToken(googleAdmin);
         res.cookie("token", token, {
-           
+
             expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-              httpOnly: true,
-      sameSite: 'None',
-      secure: true,
+            httpOnly: true,
+            sameSite: 'None',
+            secure: true,
         }).status(200).json({
             message: "Admin login successfully",
             adminId: googleAdmin._id.toString(),
