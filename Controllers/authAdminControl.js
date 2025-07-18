@@ -46,8 +46,8 @@ export const adminSignup = async (req, res) => {
 
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
-                sameSite: 'None',
-                secure: true,
+                sameSite: 'lax',
+                secure: false,
             }).status(201).json({
                 message: "Admin created successfully",
                 adminId: adminCreated._id.toString(),
@@ -101,8 +101,8 @@ export const adminLogin = async (req, res) => {
 
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 httpOnly: true,
-                sameSite: 'None',
-                secure: true,
+                sameSite: 'lax',
+                secure: false,
             }).status(201).json({
                 message: "Admin Logged in Scuccessfully",
                 adminId: adminExists._id.toString(),
