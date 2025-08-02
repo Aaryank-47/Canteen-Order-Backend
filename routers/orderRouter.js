@@ -1,5 +1,5 @@
 import express from 'express';
-import {placeOrder,orderUpdatesByAdmin,orderUpdatesByUser,orderHistory,getAllOrders, todaysOrdersCounts, getTodaysRevenue, getOrdersPerDay, getPeakOrderHours, last30DaysOrders, getMonthWiseRevenvues} from '../Controllers/orderControls.js';
+import {placeOrder,orderUpdatesByAdmin,orderUpdatesByUser,orderHistory,getAllOrders, todaysOrdersCounts, getTodaysRevenue, getOrdersPerDay, getPeakOrderHours, last30DaysOrders, getMonthWiseRevenvues, getWeeklyRevenuesofMonth} from '../Controllers/orderControls.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 // import { authOrAdminAuthMiddleware } from '../middleware/authoradminauthMidlleware.js';
@@ -19,5 +19,6 @@ router.route('/peak-order-hours').get(adminMiddleware,getPeakOrderHours);
 // router.route('/get-canteen-orders/:adminId').get(adminMiddleware,getCanteenOrders);
 router.route('/last-30-days-orders/:adminId').get(adminMiddleware, last30DaysOrders);
 router.route('/month-wise-revenues/:adminId').get(adminMiddleware, getMonthWiseRevenvues);
+router.route('/weekly-revenues-of-month/:adminId').get(getWeeklyRevenuesofMonth);
 
 export default router;     

@@ -2,6 +2,8 @@ import orderModel from "../models/orderModel.js";
 import foodModel from "../models/foodModel.js";
 import adminModel from "../models/adminModel.js";
 import { calculateTotalPrice } from "../utils/calculateTotalprice.js";
+import mongoose from "mongoose";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
 
 
 export const placeOrder = async (req, res) => {
@@ -867,7 +869,7 @@ export const last30DaysOrders = async (req, res) => {
     }
 }
 
-export const getMonthWiseRevenvues = async (req,res) =>{
+export const getMonthWiseRevenvues = async (req, res) => {
     try {
         const adminId = req.admin._id;
         if (!adminId) {
@@ -877,15 +879,15 @@ export const getMonthWiseRevenvues = async (req,res) =>{
 
         const getMonthWiseRevenvues = await orderModel.aggregate([
             {
-                $match:{
+                $match: {
                     adminId: adminId,
                     status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] }
                 }
             },
             {
                 $group: {
-                    _id:{month: { $month: "$createdAt" }},
-                    totalRevenue: {$sum: "$totalPrice" }
+                    _id: { month: { $month: "$createdAt" } },
+                    totalRevenue: { $sum: "$totalPrice" }
                 }
             },
             {
@@ -917,6 +919,81 @@ export const getMonthWiseRevenvues = async (req,res) =>{
             message: "Internal server error",
             error: error.message
         });
-        
+
+    }
+}
+
+export const getWeeklyRevenuesofMonth = async (req, res) => {
+    try {
+        const { adminId } = req.params;
+        if (!adminId) {
+            console.log("Didn't get adminID via getWeeklyRevenuesofMonth(): ", adminId);
+        }
+        console.log("ADMINid via getWeeklyRevenuesofMonth() : ", adminId);
+
+        const adminObjectId = new mongoose.Types.ObjectId(adminId);
+        console.log("Admin ObjectId:", adminObjectId);
+
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        console.log("Start of month:", startOfMonth);
+        console.log("End of month:", endOfMonth);
+
+        const weeklyRevenues = await orderModel.aggregate([
+            {
+                $match: {
+                    adminId: adminObjectId,
+                    createdAt: { $gte: startOfMonth, $lte: endOfMonth },
+                    status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] }
+                }
+            }, {
+                $group: {
+                    _id: {
+                        weekOfMonth: {
+                            $ceil: {
+                                $divide: [
+                                    { $dayOfMonth: "$createdAt" },
+                                    // { $subtract: [{ $dayOfMonth: "$createdAt" }, 1] },
+
+                                    7
+                                ]
+                            }
+                        }
+                    }
+                    ,
+                    // _id: { $week: "$createdAt" },
+                    totalRevenue: { $sum: "$totalPrice" }
+                }
+            }, {
+                $sort: {
+                    "_id": 1
+                }
+            }
+        ])
+        console.log("Weekly revenues aggregation result:", weeklyRevenues);
+
+        if (!weeklyRevenues || weeklyRevenues.length === 0) {
+            return res.status(404).json({ message: "No revenue data found for all these weeks" });
+        }
+        const weeklyRevenueData = weeklyRevenues.map(item => ({
+            week: `Week ${item._id.weekOfMonth}`,
+            totalRevenue: item.totalRevenue
+        }));
+
+        console.log("Weekly revenues:", weeklyRevenueData);
+
+        return res.status(200).json({
+            success: true,
+            message: "Weekly revenue data fetched successfully",
+            revenues: weeklyRevenueData
+        });
+    } catch (error) {
+        console.error("Error in getWeeklyRevenuesofMonth:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
     }
 }
