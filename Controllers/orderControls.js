@@ -110,76 +110,76 @@ export const placeOrder = async (req, res) => {
 
 
 // controllers/orderController.js
-export const getCanteenOrders = async (req, res) => {
-    try {
-        const { _id, role } = req.admin;
-        const { adminId: targetCanteenId } = req.params;
-        const { status, date } = req.query;
+// export const getCanteenOrders = async (req, res) => {
+//     try {
+//         const { _id, role } = req.admin;
+//         const { adminId: targetCanteenId } = req.params;
+//         const { status, date } = req.query;
 
 
-        // 1. Authorization - Verify requesting admin owns this canteen
-        if (role !== "admin") {
-            return res.status(403).json({
-                success: false,
-                message: "Unauthorized access to orders"
-            });
-        }
-        console.log("_id : ", _id);
-        console.log("targetCanteenId || adminId : ", targetCanteenId)
+//         // 1. Authorization - Verify requesting admin owns this canteen
+//         if (role !== "admin") {
+//             return res.status(403).json({
+//                 success: false,
+//                 message: "Unauthorized access to orders"
+//             });
+//         }
+//         console.log("_id : ", _id);
+//         console.log("targetCanteenId || adminId : ", targetCanteenId)
 
-        // 2. Build base query
-        const query = {
-            canteen: targetCanteenId
-        };
+//         // 2. Build base query
+//         const query = {
+//             canteen: targetCanteenId
+//         };
 
-        // 3. Add optional filters
-        if (status) {
-            query.status = status; // Filter by status (pending/preparing/ready)
-        }
+//         // 3. Add optional filters
+//         if (status) {
+//             query.status = status; // Filter by status (pending/preparing/ready)
+//         }
 
-        if (date) {
-            const startDate = new Date(date);
-            startDate.setHours(0, 0, 0, 0);
+//         if (date) {
+//             const startDate = new Date(date);
+//             startDate.setHours(0, 0, 0, 0);
 
-            const endDate = new Date(date);
-            endDate.setHours(23, 59, 59, 999);
+//             const endDate = new Date(date);
+//             endDate.setHours(23, 59, 59, 999);
 
-            query.createdAt = {
-                $gte: startDate,
-                $lte: endDate
-            };
-        }
+//             query.createdAt = {
+//                 $gte: startDate,
+//                 $lte: endDate
+//             };
+//         }
 
-        // 4. Fetch orders with populated user details
-        const orders = await orderModel.find(query)
-            .populate('user', 'name contact email')
-            .populate('items.food', 'foodName foodPrice')
-            .sort({ createdAt: -1 });
+//         // 4. Fetch orders with populated user details
+//         const orders = await orderModel.find(query)
+//             .populate('user', 'name contact email')
+//             .populate('items.food', 'foodName foodPrice')
+//             .sort({ createdAt: -1 });
 
-        console.log("orders : ", orders);
-        // 5. Format response
-        res.status(200).json({
-            success: true,
-            count: orders.length,
-            canteenId: targetCanteenId,
-            orders: orders.map(order => ({
-                orderNumber: order.orderNumber,
-                user: order.user,
-                items: order.items,
-                total: order.items.reduce((sum, item) => sum + (item.food.foodPrice * item.quantity), 0),
-                status: order.status,
-                createdAt: order.createdAt
-            }))
-        });
+//         console.log("orders : ", orders);
+//         // 5. Format response
+//         res.status(200).json({
+//             success: true,
+//             count: orders.length,
+//             canteenId: targetCanteenId,
+//             orders: orders.map(order => ({
+//                 orderNumber: order.orderNumber,
+//                 user: order.user,
+//                 items: order.items,
+//                 total: order.items.reduce((sum, item) => sum + (item.food.foodPrice * item.quantity), 0),
+//                 status: order.status,
+//                 createdAt: order.createdAt
+//             }))
+//         });
 
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: "Failed to fetch orders",
-            error: error.message || "Internal server error"
-        });
-    }
-};
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: "Failed to fetch orders",
+//             error: error.message || "Internal server error"
+//         });
+//     }
+// };
 // export const placeOrder = async (req, res) => {
 
 //     const { userId, foodItems } = req.body;
@@ -378,7 +378,7 @@ export const getCanteenOrders = async (req, res) => {
 
 
 export const orderUpdatesByAdmin = async (req, res) => {
-    
+
     const { orderId, status } = req.params;
     if (!orderId || !status) {
         return res.status(400).json({ message: "Please provide orderId and status in URL" });
@@ -580,7 +580,7 @@ export const getAllOrders = async (req, res) => {
 export const todaysOrdersCounts = async (req, res) => {
     try {
 
-        const  adminId  = req.admin._id;
+        const adminId = req.admin._id;
         if (!adminId) {
             console.log("Didn't get adminID : ", adminId);
         }
@@ -634,7 +634,7 @@ export const todaysOrdersCounts = async (req, res) => {
 export const getTodaysRevenue = async (req, res) => {
     try {
 
-        const  adminId = req.admin._id;
+        const adminId = req.admin._id;
         if (!adminId) {
             console.log("Didn't get adminID via getTodaysRevenue(): ", adminId);
         }
@@ -689,7 +689,7 @@ export const getTodaysRevenue = async (req, res) => {
 
 export const getOrdersPerDay = async (req, res) => {
 
-    const adminId  = req.admin._id;
+    const adminId = req.admin._id;
     if (!adminId) {
         console.log("Didn't get adminID via getOrdersPerDay() : ", adminId);
     }
@@ -737,7 +737,7 @@ export const getOrdersPerDay = async (req, res) => {
 export const getPeakOrderHours = async (req, res) => {
     try {
 
-        const adminId  = req.admin._id;
+        const adminId = req.admin._id;
         if (!adminId) {
             console.log("Didn't get adminID via getPeakOrderHours() : ", adminId);
         }
@@ -799,5 +799,124 @@ export const getPeakOrderHours = async (req, res) => {
             error: error.message
         });
 
+    }
+}
+
+export const last30DaysOrders = async (req, res) => {
+    try {
+        const { adminId } = req.params;
+
+        if (!adminId) {
+            return res.status(400).json({ message: "Admin ID required" });
+        }
+
+
+        const today = new Date();
+        today.setUTCHours(0, 0, 0, 0);
+
+        const thirtyDaysAgo = new Date(today);
+        thirtyDaysAgo.setDate(today.getDate() - 30);
+
+        const orders = await orderModel.find({
+            adminId,
+            createdAt: {
+                $gte: thirtyDaysAgo,
+                $lte: today
+            }
+        }).populate({
+            path: 'userId',
+            select: 'name email contact'
+        }).populate({
+            path: 'foodItems.foodId',
+            select: 'foodName foodPrice'
+        }).sort({ createdAt: -1 });
+
+        const formattedOrders = orders.map(order => ({
+            _id: order._id,
+            orderNumber: order.orderNumber,
+            status: order.status,
+            totalPrice: order.totalPrice,
+            createdAt: order.createdAt,
+            userInfo: {
+                name: order.userId?.name,
+                email: order.userId?.email,
+                contact: order.userId?.contact
+            },
+            items: order.foodItems.map(item => ({
+                foodId: item.foodId?._id,
+                foodName: item.foodId?.foodName,
+                foodPrice: item.foodId?.foodPrice,
+                quantity: item.foodQuantity,
+                itemTotal: (item.foodId?.foodPrice || 0) * (item.foodQuantity || 1)
+            }))
+        }));
+
+        return res.status(200).json({
+            success: true,
+            message: orders.length ? "Orders fetched successfully" : "No orders found today",
+            count: orders.length,
+            orders: formattedOrders
+        });
+
+    } catch (error) {
+        console.error("Error in last30Orders:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+}
+
+export const getMonthWiseRevenvues = async (req,res) =>{
+    try {
+        const adminId = req.admin._id;
+        if (!adminId) {
+            console.log("Didn't get adminID via getTodaysRevenue(): ", adminId);
+        }
+        console.log("ADMINid via getTodaysRevenue() : ", adminId);
+
+        const getMonthWiseRevenvues = await orderModel.aggregate([
+            {
+                $match:{
+                    adminId: adminId,
+                    status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] }
+                }
+            },
+            {
+                $group: {
+                    _id:{month: { $month: "$createdAt" }},
+                    totalRevenue: {$sum: "$totalPrice" }
+                }
+            },
+            {
+                $sort: {
+                    "_id.month": 1
+                }
+            }
+        ])
+        if (!getMonthWiseRevenvues || getMonthWiseRevenvues.length === 0) {
+            return res.status(404).json({ message: "No revenue data found for all these months" });
+        }
+
+        const monthlyRevenues = getMonthWiseRevenvues.map(item => ({
+            month: item._id.month,
+            totalRevenue: item.totalRevenue
+        }));
+
+        console.log("Monthly revenues:", monthlyRevenues);
+
+        return res.status(200).json({
+            success: true,
+            message: "Monthly revenue data fetched successfully",
+            revenues: monthlyRevenues
+        });
+
+    } catch (error) {
+        console.error("Error in getMonthWiseRevenvues:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+        
     }
 }
