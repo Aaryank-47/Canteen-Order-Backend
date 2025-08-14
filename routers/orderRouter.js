@@ -1,5 +1,20 @@
 import express from 'express';
-import {placeOrder,orderUpdatesByAdmin,orderUpdatesByUser,orderHistory,getAllOrders, todaysOrdersCounts, getTodaysRevenue, getOrdersPerDay, getPeakOrderHours, last30DaysOrders, getMonthWiseRevenvues, getWeeklyRevenuesofMonth} from '../Controllers/orderControls.js';
+import {placeOrder,
+    orderUpdatesByAdmin,
+    orderUpdatesByUser,
+    orderHistory,
+    getAllOrders,
+    todaysOrdersCounts,
+    getTodaysRevenue,
+    getOrdersPerDay,
+    getPeakOrderHours,
+    last30DaysOrders,
+    getMonthWiseRevenvues,
+    getWeeklyRevenuesofMonth,
+    totalOrdersYet,
+    totalRevenuesGenerated,
+    getWeeklySalesOverviewPerDay
+} from '../Controllers/orderControls.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import { adminMiddleware } from '../middleware/adminMiddleware.js';
 // import { authOrAdminAuthMiddleware } from '../middleware/authoradminauthMidlleware.js';
@@ -17,8 +32,11 @@ router.route('/todays-revenue').get(adminMiddleware,getTodaysRevenue);
 router.route('/orders-per-day').get(adminMiddleware,getOrdersPerDay);
 router.route('/peak-order-hours').get(adminMiddleware,getPeakOrderHours);
 // router.route('/get-canteen-orders/:adminId').get(adminMiddleware,getCanteenOrders);
-router.route('/last-30-days-orders/:adminId').get(adminMiddleware, last30DaysOrders);
-router.route('/month-wise-revenues/:adminId').get(adminMiddleware, getMonthWiseRevenvues);
-router.route('/weekly-revenues-of-month/:adminId').get(getWeeklyRevenuesofMonth);
+router.route('/last-30-days-orders').get(adminMiddleware, last30DaysOrders);
+router.route('/month-wise-revenues').get(adminMiddleware, getMonthWiseRevenvues);
+router.route('/weekly-revenues-of-month').get(adminMiddleware,getWeeklyRevenuesofMonth);
+router.route('/total-orders').get(adminMiddleware,totalOrdersYet);
+router.route('/total-earnings').get(adminMiddleware,totalRevenuesGenerated);
+router.route('/weekly-sales-overview').get(adminMiddleware,getWeeklySalesOverviewPerDay);
 
 export default router;     

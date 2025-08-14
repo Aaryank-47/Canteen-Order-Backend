@@ -4,6 +4,7 @@ import adminModel from "../models/adminModel.js";
 import { calculateTotalPrice } from "../utils/calculateTotalprice.js";
 import mongoose from "mongoose";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
+import req from "express/lib/request.js";
 
 
 export const placeOrder = async (req, res) => {
@@ -541,7 +542,7 @@ export const getAllOrders = async (req, res) => {
             })
             .sort({ createdAt: -1 });
 
-        // Format the response with detailed information
+        
         const formattedOrders = orders.map(order => ({
             _id: order._id,
             orderNumber: order.orderNumber,
@@ -806,12 +807,12 @@ export const getPeakOrderHours = async (req, res) => {
 
 export const last30DaysOrders = async (req, res) => {
     try {
-        const { adminId } = req.params;
+        const adminId = req.admin._id;
 
         if (!adminId) {
             return res.status(400).json({ message: "Admin ID required" });
         }
-
+        console.log("ADMINid via last30DaysOrders() : ", adminId);
 
         const today = new Date();
         today.setUTCHours(0, 0, 0, 0);
@@ -925,11 +926,11 @@ export const getMonthWiseRevenvues = async (req, res) => {
 
 export const getWeeklyRevenuesofMonth = async (req, res) => {
     try {
-        const { adminId } = req.params;
+        const adminId = req.admin._id;
+        console.log("ADMINid via getWeeklyRevenuesofMonth() : ", adminId);
         if (!adminId) {
             console.log("Didn't get adminID via getWeeklyRevenuesofMonth(): ", adminId);
         }
-        console.log("ADMINid via getWeeklyRevenuesofMonth() : ", adminId);
 
         const adminObjectId = new mongoose.Types.ObjectId(adminId);
         console.log("Admin ObjectId:", adminObjectId);
@@ -995,5 +996,166 @@ export const getWeeklyRevenuesofMonth = async (req, res) => {
             error: error.message
         });
 
+    }
+}
+
+export const totalOrdersYet = async (req, res) => {
+    try {
+        const adminId = req.admin._id;
+        console.log("ADMINid via totalOrdersYet() : ", adminId);
+        if (!adminId) {
+            return res.status(400).json({ message: "Admin ID required" });
+        }
+
+        const adminObjectId = new mongoose.Types.ObjectId(adminId);
+        console.log("Admin ObjectId:", adminObjectId);
+
+        const totalOrders = await orderModel.countDocuments({
+            adminId: adminObjectId,
+            status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] }
+        });
+        console.log(`Total orders yet: ${totalOrders}`);
+
+        return res.status(200).json({
+            message: "Total orders fetched successfully",
+            totalOrders
+        });
+    } catch (error) {
+        console.error("Error in totalOrdersYet:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+
+    }
+}
+
+export const totalRevenuesGenerated = async (req, res) => {
+    try {
+        const adminId = req.admin._id;
+        console.log("ADMINid via totalRevenuesGenerated() : ", adminId);
+        if (!adminId) {
+            return res.status(400).json({ message: "Admin ID required" });
+        }
+        const adminObjectId = new mongoose.Types.ObjectId(adminId);
+        console.log("Admin ObjectId:", adminObjectId);
+
+        const totalRevenue = await orderModel.aggregate([
+            {
+                $match: {
+                    adminId: adminObjectId,
+                    status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] }
+                }
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalRevenue: { $sum: "$totalPrice" }
+                }
+            }
+        ]);
+
+        console.log("Total revenue aggregation result:", totalRevenue);
+        if (!totalRevenue || totalRevenue.length === 0) {
+            return res.status(404).json({ message: "No revenue data found" });
+        }
+        const totalRevenueSum = totalRevenue[0].totalRevenue;
+        console.log(`Total revenue generated: ${totalRevenueSum}`);
+
+        return res.status(200).json({
+            message: "Total revenue fetched successfully",
+            totalRevenueSum
+        });
+
+    } catch (error) {
+        console.error("Error in totalRevenuesGenerated:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
+    }
+}
+
+export const getWeeklySalesOverviewPerDay = async (req, res) => {
+    try {
+        const adminId = req.admin._id;
+        console.log("ADMINid via getWeeklySalesOverviewPerDay() : ", adminId);
+        if (!adminId) {
+            console.log("Didn't get adminID via getWeeklySalesOverviewPerDay(): ", adminId);
+            return res.status(400).json({ message: "Admin ID required" });
+        }
+
+        const adminObjectId = new mongoose.Types.ObjectId(adminId);
+        console.log("Admin ObjectId:", adminObjectId);
+
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6); // Sunday
+        endOfWeek.setHours(23, 59, 59, 999);
+
+
+        const extractDaysofWeek = await orderModel.aggregate([
+            {
+                $match: {
+                    adminId: adminObjectId,
+                    status: { $in: ["Pending", "Preparing", "Ready", "Delivered", "Cancelled"] },
+                    createdAt: { $gte: startOfWeek, $lte: endOfWeek }
+                }
+            },
+            {
+                $group: {
+                    _id: {
+                        weekday: { $dayOfWeek: "$createdAt" },
+                        date: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } }
+                    },
+                    totalRevenue: { $sum: "$totalPrice" }
+                }
+            },
+            {
+                $addFields: {
+                    "dayName": {
+                        $switch: {
+                            branches: [
+                                { case: { $eq: ["$_id.weekday", 1] }, then: "Sun" },
+                                { case: { $eq: ["$_id.weekday", 2] }, then: "Mon" },
+                                { case: { $eq: ["$_id.weekday", 3] }, then: "Tue" },
+                                { case: { $eq: ["$_id.weekday", 4] }, then: "Wed" },
+                                { case: { $eq: ["$_id.weekday", 5] }, then: "Thu" },
+                                { case: { $eq: ["$_id.weekday", 6] }, then: "Fri" },
+                                { case: { $eq: ["$_id.weekday", 7] }, then: "Sat" }
+                            ],
+                            default: "Unknown"
+                        }
+                    }
+                }
+            },
+            {
+                $sort: {
+                    "_id": 1
+                }
+            }
+        ])
+
+        const weeklySalesOverview = extractDaysofWeek.map(item => ({
+            dayOfWeek: item.dayName,
+            date: item._id.date,
+            totalRevenue: item.totalRevenue
+        }));
+
+        return res.status(200).json({
+            message: "Weekly sales overview fetched successfully",
+            weeklySalesOverview
+        });
+
+    } catch (error) {
+        console.error("Error in getWeeklySalesOverviewPerDay:", error);
+        res.status(500).json({
+            message: "Internal server error",
+            error: error.message
+        });
     }
 }
