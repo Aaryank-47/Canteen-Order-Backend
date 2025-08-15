@@ -7,6 +7,8 @@ import cookieParser from "cookie-parser";
 import foodRoutes from "./routers/foodsRouter.js";
 import profileRoutes from "./routers/profileRouters.js";
 import orderRoutes from "./routers/orderRouter.js";
+
+
 import collegeRouters from "./routers/collegeRouters.js"
 import cors from "cors";
 dotenv.config({path: './config/.env'});
