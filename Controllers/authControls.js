@@ -292,6 +292,7 @@ export const googleLogin = async (req, res) => {
                 userToken: userToken
             });
             console.log(userToken)
+
         } else {
             const userToken = await generateToken(userFind._id);
             return res.cookie("userToken", userToken, {
@@ -305,7 +306,8 @@ export const googleLogin = async (req, res) => {
                 user: {
                     name: userFind.name,
                     email: userFind.email,
-                    contact: userFind.contact
+                    contact: userFind.contact,
+                    college: userFind.college
                 },
                 userToken
             });
