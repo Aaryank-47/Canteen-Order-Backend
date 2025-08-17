@@ -279,8 +279,6 @@ export const googleLogin = async (req, res) => {
                 httpOnly: true,
                 expires: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
                 secure: false,
-                // secure: true,
-                // sameSite: "lax"
                 sameSite: "lax"
             }).status(200).json({
                 message: "Google login successfully",
@@ -288,7 +286,8 @@ export const googleLogin = async (req, res) => {
                 CreateUser: {
                     name: CreateUser.name,
                     email: CreateUser.email,
-                    contact: CreateUser.contact
+                    contact: CreateUser.contact,
+                    college: CreateUser.college
                 },
                 userToken: userToken
             });
