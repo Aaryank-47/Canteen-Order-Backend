@@ -223,11 +223,6 @@ export const addCollegeCanteens = async (req, res) => {
             return res.status(404).json({ message: "Some canteens not found" });
         }
 
-        //  Update both collections in a transaction
-        // const session = await mongoose.startSession();
-        // session.startTransaction();
-
-        // Prepare transaction-like behavior without actual transactions
         let updatedCollege;
         try {
             // 1. Update college's canteens array
@@ -259,10 +254,6 @@ export const addCollegeCanteens = async (req, res) => {
             });
 
         } catch (error) {
-            // await session.abortTransaction();
-            // session.endSession();
-            // throw error;
-            // Manual rollback if second operation fails
             if (updatedCollege) {
                 await collegeModel.findByIdAndUpdate(
                     collegeId,
@@ -373,15 +364,11 @@ export const getCollegeCanteens = async (req, res) => {
 
 export const removeCollegeCanteen = async (req, res) => {
 
-    // const session = await mongoose.startsession()
-    // session.startTransaction();
-
     try {
         const { collegeId } = req.params;
         const { adminId } = req.body;
 
         if (!collegeId || !adminId) {
-            // await session.abortTransaction();
             return res.status(400).json({
                 message: "Please provide collegeId and adminId"
             });
@@ -407,7 +394,6 @@ export const removeCollegeCanteen = async (req, res) => {
         console.log("collegeId:", collegeId);
         console.log("adminId:", adminId);
 
-        // Check if canteen exists in college's canteens array
         if (!college.canteens.includes(adminId)) {
             return res.status(404).json({ message: "Canteen not associated with this college" });
         }
@@ -415,14 +401,14 @@ export const removeCollegeCanteen = async (req, res) => {
 
         let updatedCollege;
         try {
-            // 1. Remove from college
+            
             updatedCollege = await collegeModel.findByIdAndUpdate(
                 collegeId,
                 { $pull: { canteens: adminId } },
                 { new: true }
             );
 
-            // 2. Remove college reference from canteen
+            
             await adminModel.findByIdAndUpdate(
                 adminId,
                 {
@@ -440,7 +426,7 @@ export const removeCollegeCanteen = async (req, res) => {
             });
 
         } catch (error) {
-            // Manual rollback if needed
+            
             if (updatedCollege) {
                 await collegeModel.findByIdAndUpdate(
                     collegeId,
