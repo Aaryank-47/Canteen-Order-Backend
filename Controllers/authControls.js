@@ -78,7 +78,6 @@ export const login = async (req, res) => {
             return res.status(400).json({ message: "Please provide email/phone and password" });
         }
 
-        // Find user by email or phone
         const userExists = email
             ? await userModel.findOne({ email })
             : await userModel.findOne({ contact });
@@ -122,11 +121,12 @@ export const login = async (req, res) => {
             console.log("req.cookies via users login : ", req.cookies); // Add this
             console.log("req.cookies.userToken via users login : ", req.cookies.userToken);
             console.log("Response headers : ", res.getHeaders());
+        
         } catch (error) {
-
             console.error("Error generating token:", error.message);
             res.status(500).json({ message: "Error generating token", error: error.message || error });
         }
+    
     } catch (error) {
         console.error("❌ Error:", error);
         res.status(500).json({ 'internal server error2': error })
