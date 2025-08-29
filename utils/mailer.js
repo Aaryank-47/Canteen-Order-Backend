@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const transporter1 = nodemailer.createTransport({
-    service: 'gmail',  // ✅ tells nodemailer to use Gmail's SMTP server
+    service: 'gmail',
     auth: {
         user: process.env.GMAIL_USER,
         pass: process.env.GMAIL_PASS
