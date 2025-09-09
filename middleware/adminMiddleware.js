@@ -19,11 +19,11 @@ export const adminMiddleware = async (req, res, next) => {
             });
         }
 
-        // Verify JWT
+        
         const decoded = jwt.verify(token, process.env.JWT_SK);
         console.log("decoded",decoded)
 
-        // Corrected this line ↓
+        
         const admin = await adminModel.findById(decoded.adminId).select("-adminPassword");
         console.log("admin inside middleware : ", admin);
         
