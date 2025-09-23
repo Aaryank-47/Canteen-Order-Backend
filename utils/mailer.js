@@ -2,6 +2,12 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
+if(!process.env.GMAIL_USER || !process.env.GMAIL_PASS) {
+    console.error("GMAIL_USER or GMAIL_PASS is not set in environment variables.");
+}
+
+
+
 const transporter1 = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -9,6 +15,10 @@ const transporter1 = nodemailer.createTransport({
         pass: process.env.GMAIL_PASS
     }
 })
+console.log("GMAIL_USER:", process.env.GMAIL_USER);
+console.log("GMAIL_PASS:", process.env.GMAIL_PASS? '******' : 'Not Set');
+console.log("Nodemailer Transporter:", transporter1);
+
 
 export const sendOtpMail = async (email, otp) => {
     const mailOptions = {

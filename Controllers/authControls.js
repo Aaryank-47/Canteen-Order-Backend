@@ -156,11 +156,12 @@ export const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
 
-        const userExists = await userModel.findOne({ email });
-
         if (!email) {
             return res.status(400).json({ message: "please fill all the required fields" });
         }
+        
+        const userExists = await userModel.findOne({ email });
+
 
         if (!userExists) {
             return res.status(400).json({ message: "User does not exists with this email" });
